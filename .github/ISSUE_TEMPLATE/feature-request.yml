@@ -1,0 +1,62 @@
+name: Feature request
+description: Propose a change or improvement for the project.
+title: "[Feature]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the proposal without sharing credentials, tokens, private prompts, personal or repository identifiers, private configuration, or unredacted logs. For a vulnerability or other security-sensitive report, use [SECURITY.md](https://github.com/yivas/pi-output-styles/blob/master/SECURITY.md) and the [private security advisory channel](https://github.com/yivas/pi-output-styles/security/advisories/new) instead of this form.
+
+  - type: checkboxes
+    id: existing-issues
+    attributes:
+      label: Existing discussions
+      description: Search existing issues before opening a new proposal.
+      options:
+        - label: I have searched the existing issues and did not find a matching proposal.
+          required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: Describe what you want the project to do and the scope you have in mind.
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation and use case
+      description: Explain the problem this would solve and who would benefit.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Describe other approaches, workarounds, or reasons they do not meet the need.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: contribution
+    attributes:
+      label: Willingness to contribute
+      description: Would you be willing to help implement, test, or document this proposal?
+      options:
+        - Yes
+        - Maybe
+        - No
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: sanitized
+    attributes:
+      label: Privacy and security check
+      description: Feature proposals must not contain sensitive project data. Vulnerabilities belong in the private security channel linked above.
+      options:
+        - label: I removed credentials, tokens, private prompts, personal or repository identifiers, private configuration, and unredacted logs from this proposal.
+          required: true

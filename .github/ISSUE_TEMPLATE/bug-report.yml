@@ -1,0 +1,76 @@
+name: Bug report
+description: Report a reproducible problem with the project.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This repository is currently a scaffold. If no released version exists, describe the local commit or scaffold state you tested.
+
+        Do not include credentials, tokens, private prompts, personal or repository identifiers, private configuration, or unredacted logs. For a vulnerability or other security-sensitive report, use [SECURITY.md](https://github.com/yivas/pi-output-styles/blob/master/SECURITY.md) and the [private security advisory channel](https://github.com/yivas/pi-output-styles/security/advisories/new) instead of this form.
+
+  - type: checkboxes
+    id: existing-issues
+    attributes:
+      label: Existing issues
+      description: Search the issue tracker before submitting a new report.
+      options:
+        - label: I have searched the existing issues and did not find a matching report.
+          required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: State the released version, local commit, or scaffold state that you tested.
+      placeholder: No released version; describe the local commit or scaffold state.
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Host and system
+      description: Include the host, operating system, Pi version if known, and relevant runtime details.
+      placeholder: Describe the host and system details relevant to this report.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: List the smallest set of steps or inputs that reproduces the problem. Sanitize every example first.
+      placeholder: |
+        1. Start from ...
+        2. Select or provide ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should have happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed behavior
+      description: What happened instead? Include sanitized errors or logs only when they are necessary.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: sanitized
+    attributes:
+      label: Privacy and security check
+      description: Remove sensitive material before submitting. Vulnerabilities belong in the private security channel linked above.
+      options:
+        - label: I removed credentials, tokens, private prompts, personal or repository identifiers, private configuration, and unredacted logs from this report.
+          required: true
