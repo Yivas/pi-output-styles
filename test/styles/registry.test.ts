@@ -20,7 +20,21 @@ describe("builtin style registry", () => {
       "Explanatory",
       "Learning",
     ]);
-    expect(registry.list().every((style) => style.keepCodingInstructions)).toBe(true);
+  });
+
+  it("enables coding instructions for every built-in", () => {
+    const registry = createBuiltinRegistry();
+
+    expect(registry.list().map(({ id, keepCodingInstructions }) => ({
+      id,
+      keepCodingInstructions,
+    }))).toEqual([
+      { id: "default", keepCodingInstructions: true },
+      { id: "proactive", keepCodingInstructions: true },
+      { id: "concise", keepCodingInstructions: true },
+      { id: "explanatory", keepCodingInstructions: true },
+      { id: "learning", keepCodingInstructions: true },
+    ]);
   });
 
   it("resolves each built-in and leaves default without instructions", () => {

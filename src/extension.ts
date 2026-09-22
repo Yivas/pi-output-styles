@@ -1,9 +1,10 @@
 import { getAgentDir, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { registerOutputStyleCommand } from "./commands.js";
 import { registerSystemPromptHook } from "./prompt.js";
+import { registerStyleReminders } from "./reminders.js";
 import { createSelectionStore } from "./settings.js";
 import { SelectionState } from "./state.js";
-import { createBuiltinRegistry } from "./styles/registry.js";
+import { createBuiltinRegistry, resolveActiveStyle } from "./styles/registry.js";
 
 export default async function registerOutputStylesExtension(pi: ExtensionAPI): Promise<void> {
   const registry = createBuiltinRegistry();
@@ -29,6 +30,8 @@ export default async function registerOutputStylesExtension(pi: ExtensionAPI): P
       }
     }
   });
+  const getActiveStyle = () => resolveActiveStyle(registry, state.getSelected());
   registerSystemPromptHook(pi, registry, () => state.getSelected());
+  registerStyleReminders(pi, getActiveStyle);
   registerOutputStyleCommand(pi, registry, state, selection);
 }

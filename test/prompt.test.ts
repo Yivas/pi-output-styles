@@ -1,11 +1,26 @@
+import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import type {
   BeforeAgentStartEvent,
   ExtensionAPI,
   ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
 import { describe, expect, it } from "vitest";
-import { appendStyleInstructions, registerSystemPromptHook } from "../src/prompt.js";
+import {
+  appendStyleInstructions,
+  composeStylePrompt,
+  registerSystemPromptHook,
+} from "../src/prompt.js";
+import { BASE_CODING_INSTRUCTIONS } from "../src/styles/coding-instructions.js";
+import { parseStyleFile } from "../src/styles/parser.js";
 import type { StyleDefinition } from "../src/styles/types.js";
+
+const fixturesDirectory = fileURLToPath(new URL("fixtures/styles/", import.meta.url));
+
+async function readStyleFixture(name: string): Promise<StyleDefinition> {
+  const text = await readFile(`${fixturesDirectory}${name}`, "utf8");
+  return parseStyleFile(text, name);
+}
 
 const defaultStyle: StyleDefinition = {
   id: "default",
@@ -38,6 +53,35 @@ describe("appendStyleInstructions", () => {
     expect(appendStyleInstructions(prompt, conciseStyle)).toBe(
       `${prompt}\n\n## Output style: Concise\n\nPut the result first and keep the response compact.`,
     );
+  });
+});
+
+describe("composeStylePrompt", () => {
+  it("keeps the base coding block and adds the style body once when enabled", async () => {
+    const style = await readStyleFixture("keep-coding-true.md");
+    const prompt = "Native instructions\n\nEarlier extension instructions";
+
+    expect(style.turnReminder).toBeUndefined();
+    expect(style.waitingTurnReminder).toBeUndefined();
+    expect(composeStylePrompt(prompt, style, BASE_CODING_INSTRUCTIONS)).toBe(
+      `${prompt}\n\n## Coding instructions\n\n${BASE_CODING_INSTRUCTIONS}\n\n## Output style: Keep Coding True\n\nKeep this style body exactly once.\n`,
+    );
+  });
+
+  it("omits only the extension-owned base coding block when disabled", async () => {
+    const style = await readStyleFixture("keep-coding-false.md");
+    const prompt = "Native instructions\n\nEarlier extension instructions";
+
+    expect(style.turnReminder).toBeUndefined();
+    expect(style.waitingTurnReminder).toBeUndefined();
+    const composed = composeStylePrompt(prompt, style, BASE_CODING_INSTRUCTIONS);
+
+    expect(composed).toBe(
+      `${prompt}\n\n## Output style: Keep Coding False\n\nOmit only the extension-owned coding block.\n`,
+    );
+    expect(composed).toContain("Native instructions");
+    expect(composed).toContain("Earlier extension instructions");
+    expect(composed).not.toContain(BASE_CODING_INSTRUCTIONS);
   });
 });
 
@@ -79,7 +123,7 @@ describe("registerSystemPromptHook", () => {
 
     expect(result).toEqual({
       systemPrompt:
-        "Native instructions\n\nEarlier extension instructions\n\n## Output style: Concise\n\nPut the result first and keep the response compact.",
+        `Native instructions\n\nEarlier extension instructions\n\n## Coding instructions\n\n${BASE_CODING_INSTRUCTIONS}\n\n## Output style: Concise\n\nPut the result first and keep the response compact.`,
     });
   });
 });

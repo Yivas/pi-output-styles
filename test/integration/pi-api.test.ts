@@ -12,6 +12,7 @@ import {
   type BuildSystemPromptOptions,
   type ExtensionActions,
   type ExtensionContextActions,
+  type ExtensionUIContext,
   type ModelRuntime,
 } from "@earendil-works/pi-coding-agent";
 import { afterEach, describe, expect, it } from "vitest";
@@ -209,6 +210,56 @@ export default function (pi: ExtensionAPI) {
     expect(persistedEntries).toEqual([
       { customType: "pi-output-styles-probe", data: { selectedStyle: "concise" } },
     ]);
+  });
+
+  it("registers and dispatches turn lifecycle callbacks without a provider", async () => {
+    const cwd = await createTemporaryDirectory();
+    const extensionPath = join(cwd, "turn-hooks-extension.ts");
+    await writeFile(
+      extensionPath,
+      `import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+export default function (pi: ExtensionAPI) {
+  pi.on("turn_start", (event, ctx) => {
+    ctx.ui.notify("turn_start:" + event.turnIndex, "info");
+  });
+  pi.on("agent_settled", (_event, ctx) => {
+    ctx.ui.notify("agent_settled", "info");
+  });
+}
+`,
+    );
+
+    const loaded = await discoverAndLoadExtensions([extensionPath], cwd, cwd, createEventBus());
+    const runner = new ExtensionRunner(
+      loaded.extensions,
+      loaded.runtime,
+      cwd,
+      SessionManager.inMemory(cwd),
+      new ModelRegistry({} as unknown as ModelRuntime),
+    );
+    const notifications: string[] = [];
+    runner.setUIContext({
+      notify: (message: string) => notifications.push(message),
+    } as unknown as ExtensionUIContext, "print");
+    runner.bindCore({} as ExtensionActions, {
+      getModel: () => undefined,
+      getScopedModels: () => [],
+      isIdle: () => true,
+      isProjectTrusted: () => true,
+      getSignal: () => undefined,
+      abort: () => {},
+      hasPendingMessages: () => false,
+      shutdown: () => {},
+      getContextUsage: () => undefined,
+      compact: () => {},
+      getSystemPrompt: () => "native prompt",
+      getSystemPromptOptions: () => ({ cwd }),
+    } as ExtensionContextActions);
+
+    await runner.emit({ type: "turn_start", turnIndex: 2, timestamp: 123 });
+    await runner.emit({ type: "agent_settled" });
+
+    expect(notifications).toEqual(["turn_start:2", "agent_settled"]);
   });
 
   it("writes through the public settings manager while preserving unknown namespaces", async () => {

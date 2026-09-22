@@ -1,7 +1,7 @@
-import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   createEventBus,
   discoverAndLoadExtensions,
@@ -13,6 +13,9 @@ import {
   type ModelRuntime,
 } from "@earendil-works/pi-coding-agent";
 import { afterEach, describe, expect, it } from "vitest";
+import { composeStylePrompt } from "../../src/prompt.js";
+import { BASE_CODING_INSTRUCTIONS } from "../../src/styles/coding-instructions.js";
+import { parseStyleFile } from "../../src/styles/parser.js";
 import { createBuiltinRegistry } from "../../src/styles/registry.js";
 import { createTransportCapture, type TransportPayload } from "../fixtures/transport-capture.js";
 
@@ -116,5 +119,53 @@ export default function (pi) {
     expect(capturedPayload.messages[0]?.content).toContain(styleInstructions);
     expect(capturedJson.split(styleInstructions).length - 1).toBe(1);
     expect(capturedJson.split("native instructions").length - 1).toBe(1);
+  });
+
+  it("preserves native instructions while transporting the owned coding block by style", async () => {
+    const fixturesDirectory = fileURLToPath(new URL("../fixtures/styles/", import.meta.url));
+    const chainedPrompt = "native instructions\n\nproject instructions";
+
+    for (const fixtureName of ["keep-coding-true.md", "keep-coding-false.md"] as const) {
+      const style = parseStyleFile(
+        await readFile(join(fixturesDirectory, fixtureName), "utf8"),
+        fixtureName,
+      );
+      const effectivePrompt = composeStylePrompt(
+        chainedPrompt,
+        style,
+        BASE_CODING_INSTRUCTIONS,
+      );
+      const transport = createTransportCapture();
+      const payload: TransportPayload = {
+        messages: [
+          { role: "system", content: effectivePrompt },
+          { role: "user", content: "Summarize the change" },
+        ],
+      };
+
+      transport.observe(payload);
+
+      const capturedPayload = transport.read();
+      const capturedSystemPrompt = capturedPayload.messages[0]?.content;
+      if (capturedSystemPrompt === undefined) {
+        throw new Error("The simulated transport did not receive a system prompt");
+      }
+      const capturedJson = JSON.stringify(capturedPayload);
+
+      expect(capturedSystemPrompt).toContain("native instructions");
+      expect(capturedSystemPrompt).toContain("project instructions");
+      expect(capturedSystemPrompt.split(style.instructions).length - 1).toBe(1);
+      const serializedInstructions = JSON.stringify(style.instructions).slice(1, -1);
+      expect(capturedJson.split(serializedInstructions).length - 1).toBe(1);
+      const serializedChainedPrompt = JSON.stringify(chainedPrompt).slice(1, -1);
+      expect(capturedJson.split(serializedChainedPrompt).length - 1).toBe(1);
+      if (style.keepCodingInstructions) {
+        expect(capturedSystemPrompt).toContain(BASE_CODING_INSTRUCTIONS);
+        expect(capturedJson.split(BASE_CODING_INSTRUCTIONS).length - 1).toBe(1);
+      } else {
+        expect(capturedSystemPrompt).not.toContain(BASE_CODING_INSTRUCTIONS);
+        expect(capturedJson).not.toContain(BASE_CODING_INSTRUCTIONS);
+      }
+    }
   });
 });

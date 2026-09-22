@@ -1,0 +1,2 @@
+export const BASE_CODING_INSTRUCTIONS =
+  "Approach coding tasks with care. Read relevant code and tests before editing. Preserve existing contracts and project instructions. Prefer the smallest correct change. Validate external input at boundaries, handle failures explicitly, and avoid hiding errors. Keep names and control flow clear. Add focused tests for changed behavior and run the repository's checks. Report what changed, how it was verified, and any remaining limitations.";

@@ -79,7 +79,9 @@ describe("extension factory", () => {
     const initial = await first.handlers.get("before_agent_start")?.({
       systemPrompt: "Native instructions",
     }, {});
-    expect(initial).toEqual({ systemPrompt: "Native instructions" });
+    expect(initial).toEqual({
+      systemPrompt: expect.stringContaining("## Coding instructions"),
+    });
 
     await firstCommand?.handler("Concise", commandContext());
     const changed = await first.handlers.get("before_agent_start")?.({
@@ -177,7 +179,9 @@ describe("extension factory", () => {
     const beforeWrite = await extensionApi.handlers.get("before_agent_start")?.({
       systemPrompt: "Native instructions",
     }, {});
-    expect(beforeWrite).toEqual({ systemPrompt: "Native instructions" });
+    expect(beforeWrite).toEqual({
+      systemPrompt: expect.stringContaining("## Coding instructions"),
+    });
 
     const command = extensionApi.commands.get("output-style");
     await command?.handler("Concise", commandContext(notify));
@@ -186,6 +190,8 @@ describe("extension factory", () => {
     const afterWrite = await extensionApi.handlers.get("before_agent_start")?.({
       systemPrompt: "Native instructions",
     }, {});
-    expect(afterWrite).toEqual({ systemPrompt: "Native instructions" });
+    expect(afterWrite).toEqual({
+      systemPrompt: expect.stringContaining("## Coding instructions"),
+    });
   });
 });

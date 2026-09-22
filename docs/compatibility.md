@@ -18,7 +18,22 @@ The local Pi types, documentation, and a no-network extension runner probe verif
 - `session_start`: is available for reporting startup persistence errors through the UI.
 - Later `before_agent_start` handlers can still replace the prompt. This extension does not claim priority over other extensions.
 
-The probe also observed `turn_start`, `turn_end`, and `agent_settled`. A dedicated hook for waiting only on background work was not present. Turn reminders and operational `keep-coding-instructions` semantics are **not-run** in this package; they belong to a later front.
+The probe also observed callback registration and dispatch for `turn_start`, `turn_end`, and `agent_settled` through the local `ExtensionRunner`, without a provider request or network access. A dedicated hook for waiting only on background work was not present. The `turnReminder` adapter emits through `turn_start` without adding the reminder to the system prompt. The extension composes its own coding block before the style instructions and never rewrites the chained native or project prompt.
+
+## Turn and waiting-hook audit
+
+The audit used the installed package's public documentation, declaration files, runner declaration, and the local no-network probes in `test/integration/pi-api.test.ts` and `test/integration/reminders-api.test.ts`.
+
+| Capability | Status | Public contract and evidence |
+| --- | --- | --- |
+| `turnReminder` | **available** | `ExtensionAPI.on("turn_start", handler: ExtensionHandler<TurnStartEvent>): () => void` at `dist/core/extensions/types.d.ts:1004`; `TurnStartEvent` exposes `turnIndex` and `timestamp` at `dist/core/extensions/types.d.ts:643-647`; the lifecycle and callback contract are documented at `docs/extensions.md:626-633`. The probe registers the callback and observes `turn_start:1` through `ExtensionRunner.emit` without a provider. |
+| Turn-end observation | **available** | `ExtensionAPI.on("turn_end", handler: ExtensionHandler<TurnEndEvent, TurnEndEventResult>): () => void` at `dist/core/extensions/types.d.ts:1005`; `TurnEndEvent` requires boundary state plus `turnIndex`, message, tool results, and entry IDs at `dist/core/extensions/types.d.ts:648-655`. The runner declaration excludes this actionable boundary from generic `emit` and exposes `emitBoundary` at `dist/core/extensions/runner.d.ts:20-23, 158-160`; the probe observes `turn_end:1` through that method. |
+| Final settled notification | **available** | `ExtensionAPI.on("agent_settled", handler: ExtensionHandler<AgentSettledEvent>): () => void` at `dist/core/extensions/types.d.ts:1001`; the event has no payload at `dist/core/extensions/types.d.ts:624-626`, and the documentation defines it as final and notification-only at `docs/extensions.md:575-606`. The probe observes `agent_settled` through `ExtensionRunner.emit`. This is not a background-only signal. |
+| `waitingTurnReminder` | **blocked (FAIL-CLOSED)** | The complete public `ExtensionEvent` union at `dist/core/extensions/types.d.ts:879` and the lifecycle list at `docs/extensions.md:275-317` contain no event whose contract means that background work remains but no executable work remains. `agent_settled` is too broad because it only means the agent will not continue automatically. No timer, polling, tool wrapper, prompt regex, or provider hook is used as a substitute. |
+| `keep-coding-instructions` | **available (extension-owned block only)** | `before_agent_start` receives the chained prompt and returns the composed prompt. `true` keeps the extension-owned coding block; `false` omits that block while preserving native, project, and earlier extension text. The transport integration test verifies both prompt variants and counts each style body once. |
+| Style prompt precedence | **degraded** | Pi permits later `before_agent_start` handlers to replace the prompt. This extension preserves the prompt it receives but cannot claim priority over other extensions. |
+
+`ExtensionRunner.emit` dispatches generic notification events, while `turn_end` is intentionally dispatched through `emitBoundary`; this distinction is confirmed by `dist/core/extensions/runner.d.ts:20-23, 158-160`, the implementation at `dist/core/extensions/runner.js:662-704`, and `docs/extensions.md:657-661`. The probes capture `ctx.ui.notify` output and do not invoke a provider, credentials, network, or telemetry.
 
 ## Persistence
 
@@ -38,6 +53,8 @@ Writes acquire an exclusive lock directory beside the selection file, so separat
 - Registry installation and npm publication: not-run.
 - User and project custom style discovery: not-run; planned for a later front.
 - Plugin-forced temporary styles: not-run.
-- Per-turn reminders and operational `keep-coding-instructions`: not-run.
+- `waitingTurnReminder`: blocked (FAIL-CLOSED); no public background-only waiting event exists in Pi `0.87.0`.
+- `turnReminder` hook registration and notification dispatch: available and implemented through `registerStyleReminders`; emission is covered by unit and ExtensionRunner probes without a provider.
+- `keep-coding-instructions`: available for the extension-owned coding block; Pi-native, project, and opaque third-party instructions cannot be selectively removed.
 - Provider requests and network access: not-run and intentionally absent from the tests.
 - Cross-process contention: checked with a separate local Node process waiting on the selection lock; the lock uses the filesystem's atomic directory creation primitive.

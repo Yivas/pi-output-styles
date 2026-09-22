@@ -7,6 +7,8 @@ export interface StyleDefinition {
   keepCodingInstructions: boolean;
   instructions: string;
   source: "builtin" | "file";
+  turnReminder?: string;
+  waitingTurnReminder?: string;
 }
 
 export interface StyleRegistry {

@@ -1,9 +1,10 @@
 import type { StyleDefinition } from "./types.js";
 
 const REQUIRED_FIELDS = ["name", "description", "keep-coding-instructions"] as const;
-type FrontmatterField = (typeof REQUIRED_FIELDS)[number];
+const OPTIONAL_STRING_FIELDS = ["turn-reminder", "waiting-turn-reminder"] as const;
+type FrontmatterField = (typeof REQUIRED_FIELDS | typeof OPTIONAL_STRING_FIELDS)[number];
 
-type Frontmatter = Partial<Record<FrontmatterField, string | boolean>>;
+type Frontmatter = Partial<Record<FrontmatterField, string | boolean | number>>;
 
 export function normalizeStyleId(name: string): string {
   return name
@@ -29,7 +30,7 @@ export function parseStyleFile(text: string, source: string): StyleDefinition {
     throw new Error(`${source}: name must contain at least one identifier character`);
   }
 
-  return {
+  const style: StyleDefinition = {
     id,
     name,
     description,
@@ -37,6 +38,17 @@ export function parseStyleFile(text: string, source: string): StyleDefinition {
     instructions,
     source: "file",
   };
+  const turnReminder = optionalString(values, "turn-reminder", source);
+  const waitingTurnReminder = optionalString(values, "waiting-turn-reminder", source);
+
+  if (turnReminder !== undefined) {
+    style.turnReminder = turnReminder;
+  }
+  if (waitingTurnReminder !== undefined) {
+    style.waitingTurnReminder = waitingTurnReminder;
+  }
+
+  return style;
 }
 
 function splitStyleFile(text: string, source: string): { frontmatter: string; instructions: string } {
@@ -88,7 +100,10 @@ function parseFrontmatter(text: string, source: string): Frontmatter {
     }
     seen.add(key);
     const parsedValue = parseScalar(rawValue, source, key);
-    if (REQUIRED_FIELDS.includes(key as FrontmatterField)) {
+    if (
+      REQUIRED_FIELDS.includes(key as (typeof REQUIRED_FIELDS)[number]) ||
+      OPTIONAL_STRING_FIELDS.includes(key as (typeof OPTIONAL_STRING_FIELDS)[number])
+    ) {
       values[key as FrontmatterField] = parsedValue;
     }
   }
@@ -102,12 +117,15 @@ function parseFrontmatter(text: string, source: string): Frontmatter {
   return values;
 }
 
-function parseScalar(value: string, source: string, key: string): string | boolean {
+function parseScalar(value: string, source: string, key: string): string | boolean | number {
   if (value === "true") {
     return true;
   }
   if (value === "false") {
     return false;
+  }
+  if (/^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?$/.test(value)) {
+    return Number(value);
   }
   if (value === "" && key === "keep-coding-instructions") {
     throw new Error(`${source}: keep-coding-instructions must be exactly true or false`);
@@ -136,6 +154,21 @@ function requireString(values: Frontmatter, field: "name" | "description", sourc
   const value = values[field];
   if (typeof value !== "string" || value.trim() === "") {
     throw new Error(`${source}: ${field} must be a non-empty string`);
+  }
+  return value;
+}
+
+function optionalString(
+  values: Frontmatter,
+  field: (typeof OPTIONAL_STRING_FIELDS)[number],
+  source: string,
+): string | undefined {
+  const value = values[field];
+  if (value === undefined || value === "") {
+    return undefined;
+  }
+  if (typeof value !== "string") {
+    throw new Error(`${source}: ${field} must be a string`);
   }
   return value;
 }
