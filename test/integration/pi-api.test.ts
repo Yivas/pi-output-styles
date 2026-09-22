@@ -15,7 +15,11 @@ import {
   type ExtensionUIContext,
   type ModelRuntime,
 } from "@earendil-works/pi-coding-agent";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+vi.hoisted(() => {
+  process.env.PI_PACKAGE_DIR = `${process.cwd()}/node_modules/@earendil-works/pi-coding-agent`;
+});
 
 const temporaryDirectories: string[] = [];
 
