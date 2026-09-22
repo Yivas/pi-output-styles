@@ -8,7 +8,7 @@ Switchable response styles for Pi, implemented as a Pi extension. It provides bu
 
 ## Problem and scope
 
-Pi does not provide an integrated way to select and persist a response style while keeping project instructions separate. `pi-output-styles` manages style instructions stored in Markdown files, provides a selection command, persists the selected style, and applies it to the system prompt through Pi's extension API.
+Pi does not provide an integrated way to select and persist a response style while keeping project instructions separate. `pi-output-styles` provides built-in style instructions defined in the extension and loads custom style instructions from user and project Markdown files. It provides a selection command, persists the selected style, and applies it to the system prompt through Pi's extension API.
 
 The extension decides which style instructions to apply. It does not change the model, provider, reasoning, or permissions. It does not integrate other plugins or subagents, and it does not add telemetry or functional network access.
 
