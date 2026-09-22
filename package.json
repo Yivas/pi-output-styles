@@ -1,7 +1,11 @@
 {
-  "name": "pi-output-styles",
-  "version": "0.0.0",
-  "private": true,
+  "name": "pi-response-styles",
+  "version": "0.1.0",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Yivas/pi-output-styles.git"
+  },
   "type": "module",
   "pi": {
     "extensions": ["./src/extension.ts"]

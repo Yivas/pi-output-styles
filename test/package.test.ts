@@ -21,7 +21,7 @@ describe("package manifest", () => {
   it("declares the Pi extension entrypoint and an explicit public allowlist", async () => {
     const manifest = await readManifest();
 
-    expect(manifest.name).toBe("pi-output-styles");
+    expect(manifest.name).toBe("pi-response-styles");
     expect(manifest.type).toBe("module");
     expect(manifest.pi?.extensions).toEqual(["./src/extension.ts"]);
     expect(manifest.files).toEqual([

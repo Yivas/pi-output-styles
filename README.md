@@ -2,7 +2,7 @@
 
 Switchable response styles for Pi, implemented as a Pi extension. It provides built-in and user- or project-defined instructions for coding-agent work.
 
-**Status:** implemented in the repository. No package or release has been published yet. Compatibility has been verified against Pi 0.87.0 only.
+**Status:** release `v0.1.0`. Compatibility has been verified against Pi 0.87.0 only.
 
 **Navigation:** [Security](SECURITY.md) · [Contributing](CONTRIBUTING.md) · [License](LICENSE) · [Releases](https://github.com/yivas/pi-output-styles/releases)
 
@@ -28,7 +28,15 @@ The waiting-turn reminder is fail-closed: Pi 0.87.0 does not expose a verified h
 
 ## Status and compatibility
 
-The extension is executable and covered by the repository's local checks. The verified compatibility baseline is Pi `0.87.0`; other Pi versions have not been run. Registry installation and npm publication have not been run because no package or release is available yet.
+The extension is executable and covered by the repository's local checks. The verified compatibility baseline is Pi `0.87.0`; other Pi versions have not been run. Installation from the npm registry has not been run.
+
+## Installation
+
+The package is published on npm as `pi-response-styles`; the repository and product keep the name `pi-output-styles`.
+
+```bash
+npm install pi-response-styles
+```
 
 ## Security and privacy
 
