@@ -1,5 +1,6 @@
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
+import { fileURLToPath } from "node:url";
 import { join } from "node:path";
 import { vi, describe, expect, it, afterEach } from "vitest";
 
@@ -11,12 +12,30 @@ vi.mock("@earendil-works/pi-coding-agent", async (importOriginal) => {
 });
 
 import extension from "../../src/extension.js";
-import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
+import {
+  createEventBus,
+  discoverAndLoadExtensions,
+  ExtensionRunner,
+  ModelRegistry,
+  SessionManager,
+  type BuildSystemPromptOptions,
+  type ExtensionActions,
+  type ExtensionAPI,
+  type ExtensionCommandContext,
+  type ExtensionContextActions,
+  type ModelRuntime,
+} from "@earendil-works/pi-coding-agent";
 
 const temporaryDirectories: string[] = [];
+const originalAgentDirectory = process.env.PI_CODING_AGENT_DIR;
 
 afterEach(async () => {
   mockedAgentDirectory.path = "";
+  if (originalAgentDirectory === undefined) {
+    delete process.env.PI_CODING_AGENT_DIR;
+  } else {
+    process.env.PI_CODING_AGENT_DIR = originalAgentDirectory;
+  }
   await Promise.all(temporaryDirectories.splice(0).map((directory) => rm(directory, { recursive: true, force: true })));
 });
 
@@ -77,6 +96,70 @@ describe("extension factory", () => {
     expect(restored).toEqual({
       systemPrompt: expect.stringContaining("## Output style: Concise"),
     });
+  });
+
+  it("runs the factory through Pi's real ExtensionRunner", async () => {
+    const agentDirectory = await mkdtemp(join(tmpdir(), "pi-output-styles-real-runner-"));
+    temporaryDirectories.push(agentDirectory);
+    mockedAgentDirectory.path = agentDirectory;
+
+    const cwd = agentDirectory;
+    process.env.PI_CODING_AGENT_DIR = agentDirectory;
+    const loaded = await discoverAndLoadExtensions(
+      [fileURLToPath(new URL("../../src/extension.ts", import.meta.url))],
+      cwd,
+      agentDirectory,
+      createEventBus(),
+    );
+    const runner = new ExtensionRunner(
+      loaded.extensions,
+      loaded.runtime,
+      cwd,
+      SessionManager.inMemory(cwd),
+      new ModelRegistry({} as unknown as ModelRuntime),
+    );
+    runner.bindCore(
+      {
+        sendMessage: () => {},
+        sendUserMessage: () => {},
+        appendEntry: () => {},
+        setSessionName: () => {},
+        getSessionName: () => undefined,
+        setLabel: () => {},
+        getLabel: () => undefined,
+        setActiveTools: () => {},
+        getActiveTools: () => [],
+        getAllTools: () => [],
+        refreshTools: () => {},
+        getCommands: () => [],
+        setModel: async () => false,
+        getThinkingLevel: () => "off",
+        setThinkingLevel: () => {},
+      } as ExtensionActions,
+      {
+        getModel: () => undefined,
+        getScopedModels: () => [],
+        isIdle: () => true,
+        isProjectTrusted: () => true,
+        getSignal: () => undefined,
+        abort: () => {},
+        hasPendingMessages: () => false,
+        shutdown: () => {},
+        getContextUsage: () => undefined,
+        compact: () => {},
+        getSystemPrompt: () => "Native instructions",
+        getSystemPromptOptions: () => ({ cwd }),
+      } as ExtensionContextActions,
+    );
+
+    const command = runner.getCommand("output-style");
+    expect(command).toBeDefined();
+    await command?.handler("Concise", runner.createCommandContext());
+
+    const promptOptions: BuildSystemPromptOptions = { cwd, customPrompt: "Native instructions" };
+    const result = await runner.emitBeforeAgentStart("probe", undefined, promptOptions);
+    expect(result.systemPromptOptions.forceSystemPrompt).toContain("Native instructions");
+    expect(result.systemPromptOptions.forceSystemPrompt).toContain("## Output style: Concise");
   });
 
   it("falls back to default and reports a visible error when persistence cannot be read or written", async () => {

@@ -1,11 +1,15 @@
+import { execFile as execFileCallback } from "node:child_process";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { mkdtemp } from "node:fs/promises";
+import { promisify } from "node:util";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import { createSelectionStore } from "../src/settings.js";
 import { createBuiltinRegistry, resolveActiveStyle } from "../src/styles/registry.js";
 
+const execFile = promisify(execFileCallback);
 const temporaryDirectories: string[] = [];
 
 async function createAgentDirectory(): Promise<string> {
@@ -98,5 +102,36 @@ describe("selection persistence", () => {
     expect(resolveActiveStyle(createBuiltinRegistry(), selectedId).id).toBe("default");
     expect(errors).toHaveLength(1);
     expect(errors[0]?.message).toMatch(/unknown|style/i);
+  });
+
+  it("waits for a selection lock held by another process", async () => {
+    const agentDirectory = await createAgentDirectory();
+    const lockDirectory = join(agentDirectory, "pi-output-styles.selection.json.lock");
+    await mkdir(lockDirectory);
+    const scriptPath = join(agentDirectory, "write-selection.ts");
+    const settingsModule = pathToFileURL(join(process.cwd(), "src/settings.ts")).href;
+    await writeFile(
+      scriptPath,
+      `import { createSelectionStore } from ${JSON.stringify(settingsModule)};\n` +
+        `await createSelectionStore(process.argv[2], { validStyleIds: ["concise"] }).write(process.argv[3]);\n`,
+    );
+
+    const child = execFile(process.execPath, [
+      join(process.cwd(), "node_modules/vite-node/vite-node.mjs"),
+      "--script",
+      scriptPath,
+      agentDirectory,
+      "concise",
+    ], { cwd: process.cwd() });
+    let completed = false;
+    void child.then(() => {
+      completed = true;
+    });
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(completed).toBe(false);
+    await rm(lockDirectory, { recursive: true, force: true });
+    await expect(child).resolves.toBeDefined();
+    expect(completed).toBe(true);
   });
 });

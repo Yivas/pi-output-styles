@@ -28,9 +28,9 @@ Pi `0.87.0` does not expose a public generic writer for extension-owned settings
 <agentDir>/pi-output-styles.selection.json
 ```
 
-The file is outside the `output-styles/` Markdown discovery directory. Writes use a temporary JSON file followed by rename and are serialized within the process. Missing, unreadable, malformed, or unknown selections fall back to `default` and report an error. Persistence was checked with a new store and a new extension instance using temporary local directories.
+The file is outside the `output-styles/` Markdown discovery directory. Writes use a temporary JSON file followed by rename and are serialized by both a process-local queue and a filesystem lock. Missing, unreadable, malformed, or unknown selections fall back to `default` and report an error. Persistence was checked with a new store and a new extension instance using temporary local directories.
 
-Cross-process locking was not-run. The package does not write Pi's `settings.json` and does not use `appendEntry` as a substitute for durable selection storage.
+Writes acquire an exclusive lock directory beside the selection file, so separate Pi processes serialize the temporary-file rename. A stale lock older than 30 seconds is removed before retrying. The package does not write Pi's `settings.json` and does not use `appendEntry` as a substitute for durable selection storage.
 
 ## Not covered
 
@@ -40,3 +40,4 @@ Cross-process locking was not-run. The package does not write Pi's `settings.jso
 - Plugin-forced temporary styles: not-run.
 - Per-turn reminders and operational `keep-coding-instructions`: not-run.
 - Provider requests and network access: not-run and intentionally absent from the tests.
+- Cross-process contention: checked with a separate local Node process waiting on the selection lock; the lock uses the filesystem's atomic directory creation primitive.
