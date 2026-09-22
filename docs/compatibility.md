@@ -6,7 +6,7 @@ The compatibility statements in this document are limited to the Pi installation
 
 - Pi package: local dependency `@earendil-works/pi-coding-agent` `0.87.0` (the API probe pins `PI_PACKAGE_DIR` to this dependency so an unrelated global Pi installation cannot change the observed version)
 - Node.js: the local Node.js `v24.9.0` installation used for the checks
-- Package status: not published; installation from a registry was not-run
+- Package status: `pi-response-styles` `0.1.0` published on npm and GitHub Releases; compatibility verified against Pi `0.87.0` only; `waitingTurnReminder` blocked (FAIL-CLOSED); cross-plugin force interoperability not-run
 
 ## Observed extension API
 
@@ -50,7 +50,7 @@ Writes acquire an exclusive lock directory beside the selection file, so separat
 ## Not covered
 
 - Pi versions other than `0.87.0`: not-run.
-- Registry installation and npm publication: not-run.
+- Registry installation: not-run.
 - User and project custom style discovery: covered by local fixture and integration tests for the approved user/project directories, precedence, malformed files, and fallback behavior.
 - Plugin-forced temporary styles: the programmatic `ForcedStyleController` factory is covered by local tests. The controller is process-local; Pi does not expose an approved inter-extension mechanism for handing it to a separate plugin, so cross-plugin force delivery is not implemented and remains not-run.
 - `waitingTurnReminder`: blocked (FAIL-CLOSED); no public background-only waiting event exists in Pi `0.87.0`.

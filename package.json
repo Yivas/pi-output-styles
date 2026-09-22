@@ -1,11 +1,14 @@
 {
   "name": "pi-response-styles",
   "version": "0.1.0",
+  "description": "Switchable response styles for the Pi coding agent, selected with the /output-style command and persisted between sessions.",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Yivas/pi-output-styles.git"
   },
+  "homepage": "https://github.com/Yivas/pi-output-styles",
+  "bugs": "https://github.com/Yivas/pi-output-styles/issues",
   "type": "module",
   "pi": {
     "extensions": ["./src/extension.ts"]
