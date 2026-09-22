@@ -1,5 +1,5 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { resolveActiveStyle } from "./styles/registry.js";
+import { resolveActiveStyle, type StyleResolutionWarningHandler } from "./styles/registry.js";
 import { BASE_CODING_INSTRUCTIONS } from "./styles/coding-instructions.js";
 import type { StyleDefinition, StyleRegistry } from "./styles/types.js";
 
@@ -32,9 +32,10 @@ export function registerSystemPromptHook(
   pi: ExtensionAPI,
   registry: StyleRegistry,
   getSelected: () => string | undefined,
+  onWarning?: StyleResolutionWarningHandler,
 ): void {
   pi.on("before_agent_start", (event) => {
-    const style = resolveActiveStyle(registry, getSelected());
+    const style = resolveActiveStyle(registry, getSelected(), onWarning);
     return { systemPrompt: composeStylePrompt(event.systemPrompt, style, BASE_CODING_INSTRUCTIONS) };
   });
 }

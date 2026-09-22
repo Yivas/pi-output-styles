@@ -6,7 +6,8 @@ export interface StyleDefinition {
   description: string;
   keepCodingInstructions: boolean;
   instructions: string;
-  source: "builtin" | "file";
+  source: "builtin" | "file" | "user" | "project";
+  filePath?: string;
   turnReminder?: string;
   waitingTurnReminder?: string;
 }

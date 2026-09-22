@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createBuiltinRegistry, resolveActiveStyle } from "../../src/styles/registry.js";
 import { invalidBuiltinId } from "../fixtures/styles/builtin-invalid-id.test-data.js";
 
@@ -53,10 +53,15 @@ describe("builtin style registry", () => {
     expect(resolveActiveStyle(registry, undefined).id).toBe("default");
   });
 
-  it("rejects an unknown selected style", () => {
+  it("falls back to default for an unknown selected style", () => {
     const registry = createBuiltinRegistry();
+    const warning = vi.fn();
 
-    expect(() => resolveActiveStyle(registry, invalidBuiltinId)).toThrow(/unknown|not found/i);
+    expect(resolveActiveStyle(registry, invalidBuiltinId, warning).id).toBe("default");
+    expect(warning).toHaveBeenCalledWith(expect.objectContaining({
+      code: "unknown-style",
+      styleId: invalidBuiltinId,
+    }));
     expect(registry.resolve(invalidBuiltinId)).toBeUndefined();
   });
 });

@@ -64,9 +64,13 @@ export function registerOutputStyleCommand(
 function formatStyleList(registry: StyleRegistry, state: SelectionState): string {
   const active = getActiveStyle(registry, state);
   const styles = registry.list()
-    .map((style) => `${style.id === active.id ? "*" : " "} ${style.name} — ${style.description}`)
+    .map((style) => `${style.id === active.id ? "*" : " "} ${style.name} — ${style.description} [${formatStyleSource(style.source)}]`)
     .join("\n");
   return `Available output styles:\n${styles}\nActive: ${active.id}`;
+}
+
+function formatStyleSource(source: StyleDefinition["source"]): string {
+  return source === "builtin" ? "built-in" : source;
 }
 
 function getActiveStyle(registry: StyleRegistry, state: SelectionState): StyleDefinition {

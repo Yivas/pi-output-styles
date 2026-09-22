@@ -51,8 +51,8 @@ Writes acquire an exclusive lock directory beside the selection file, so separat
 
 - Pi versions other than `0.87.0`: not-run.
 - Registry installation and npm publication: not-run.
-- User and project custom style discovery: not-run; planned for a later front.
-- Plugin-forced temporary styles: not-run.
+- User and project custom style discovery: covered by local fixture and integration tests for the approved user/project directories, precedence, malformed files, and fallback behavior.
+- Plugin-forced temporary styles: the programmatic `ForcedStyleController` factory is covered by local tests. The controller is process-local; Pi does not expose an approved inter-extension mechanism for handing it to a separate plugin, so cross-plugin force delivery is not implemented and remains not-run.
 - `waitingTurnReminder`: blocked (FAIL-CLOSED); no public background-only waiting event exists in Pi `0.87.0`.
 - `turnReminder` hook registration and notification dispatch: available and implemented through `registerStyleReminders`; emission is covered by unit and ExtensionRunner probes without a provider.
 - `keep-coding-instructions`: available for the extension-owned coding block; Pi-native, project, and opaque third-party instructions cannot be selectively removed.

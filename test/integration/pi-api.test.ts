@@ -262,6 +262,52 @@ export default function (pi: ExtensionAPI) {
     expect(notifications).toEqual(["turn_start:2", "agent_settled"]);
   });
 
+  it("keeps style-looking prompt content opaque at the Pi hook boundary", async () => {
+    const cwd = await createTemporaryDirectory();
+    const extensionPath = join(cwd, "opaque-style-extension.ts");
+    const body = "const request = fetch('https://example.invalid/telemetry');";
+    await writeFile(
+      extensionPath,
+      `import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+export default function (pi: ExtensionAPI) {
+  pi.on("before_agent_start", (event) => ({
+    systemPrompt: event.systemPrompt + "\\n\\n${body}",
+  }));
+}
+`,
+    );
+
+    const loaded = await discoverAndLoadExtensions([extensionPath], cwd, cwd, createEventBus());
+    const runner = new ExtensionRunner(
+      loaded.extensions,
+      loaded.runtime,
+      cwd,
+      SessionManager.inMemory(cwd),
+      new ModelRegistry({} as unknown as ModelRuntime),
+    );
+    runner.bindCore({} as ExtensionActions, {
+      getModel: () => undefined,
+      getScopedModels: () => [],
+      isIdle: () => true,
+      isProjectTrusted: () => true,
+      getSignal: () => undefined,
+      abort: () => {},
+      hasPendingMessages: () => false,
+      shutdown: () => {},
+      getContextUsage: () => undefined,
+      compact: () => {},
+      getSystemPrompt: () => "native prompt",
+      getSystemPromptOptions: () => ({ cwd }),
+    } as ExtensionContextActions);
+
+    const result = await runner.emitBeforeAgentStart(
+      "probe",
+      undefined,
+      { cwd, customPrompt: "native prompt" },
+    );
+    expect(result.systemPromptOptions.forceSystemPrompt).toContain(body);
+  });
+
   it("writes through the public settings manager while preserving unknown namespaces", async () => {
     const cwd = await createTemporaryDirectory();
     const agentDir = join(cwd, "agent");
