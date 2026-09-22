@@ -1,0 +1,32 @@
+{
+  "name": "pi-output-styles",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "pi": {
+    "extensions": ["./src/extension.ts"]
+  },
+  "files": [
+    "src",
+    "docs/compatibility.md",
+    "README.md",
+    "LICENSE",
+    "SECURITY.md",
+    "CONTRIBUTING.md",
+    "CODE_OF_CONDUCT.md"
+  ],
+  "scripts": {
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "0.87.0",
+    "@eslint/js": "9.27.0",
+    "@types/node": "22.15.21",
+    "eslint": "9.27.0",
+    "typescript": "5.8.3",
+    "typescript-eslint": "8.33.0",
+    "vitest": "3.2.4"
+  }
+}
