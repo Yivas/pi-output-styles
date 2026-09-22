@@ -2,17 +2,20 @@
 
 ## Supported versions
 
-No version has been published. The repository is scaffold only, so there is no supported release line yet.
+No package or release has been published. Security reports are accepted for the current repository commits; the only verified Pi compatibility baseline is `0.87.0`.
 
 | Version or line | Support status |
 | --- | --- |
-| None published | No supported release; scaffold only |
+| Current repository commits (unreleased) | Security reports accepted; compatibility checked against Pi `0.87.0` only |
+| Published releases | None |
 
 ## Scope and product boundaries
 
-`pi-output-styles` is planned as a Pi plugin that selects and applies response-style instructions. It does not change the model, provider, reasoning, or permissions. It does not integrate other plugins or subagents, and it will not add telemetry or functional network access.
+`pi-output-styles` is an implemented Pi extension that selects and applies response-style instructions. It includes built-in styles, the `/output-style` command, system-prompt injection, selection persistence, turn-start reminders, `keep-coding-instructions`, custom user and project styles, and a process-local forced-style API. Custom styles take precedence in the order built-in, user, then project.
 
-Style contents are treated as untrusted input. The planned plugin will inject them as instructions that can influence responses; it will not execute them as code or treat them as a security boundary. Do not put credentials, tokens, private prompts, or other secrets in a style file.
+The extension does not change the model, provider, reasoning, or permissions. It does not integrate other plugins or subagents, and it does not add telemetry or functional network access. The waiting-turn reminder is fail-closed because Pi `0.87.0` exposes no verified waiting-only hook. Cross-plugin force interoperability has not been run; forced styles are process-local.
+
+Style contents are treated as untrusted input. The extension injects them as instructions that can influence responses; it does not execute them as code or treat them as a security boundary. Do not put credentials, tokens, private prompts, or other secrets in a style file.
 
 The following are outside the product's security model:
 
@@ -26,11 +29,11 @@ Report security issues through the repository's GitHub security channel:
 
 <https://github.com/yivas/pi-output-styles>
 
-This repository URL is the current project channel. Do not disclose sensitive vulnerability details in a public issue. Use the repository's private security reporting option when it is available.
+Do not disclose sensitive vulnerability details in a public issue. Use the repository's [private security advisory channel](https://github.com/yivas/pi-output-styles/security/advisories/new) instead.
 
 A useful report should include:
 
-- The version or commit tested. If none is published, state that the report concerns the scaffold or a local commit.
+- The version or commit tested. No release is published, so identify the repository commit.
 - The environment, including the Pi version, operating system, and relevant runtime details.
 - A minimal, sanitized reproduction.
 - The security impact and affected behavior.

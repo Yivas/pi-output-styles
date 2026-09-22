@@ -7,7 +7,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        This repository is currently a scaffold. If no released version exists, describe the local commit or scaffold state you tested.
+        This repository contains executable extension code, but no release has been published. If no released version exists, describe the local commit you tested.
 
         Do not include credentials, tokens, private prompts, personal or repository identifiers, private configuration, or unredacted logs. For a vulnerability or other security-sensitive report, use [SECURITY.md](https://github.com/yivas/pi-output-styles/blob/master/SECURITY.md) and the [private security advisory channel](https://github.com/yivas/pi-output-styles/security/advisories/new) instead of this form.
 
@@ -24,8 +24,8 @@ body:
     id: version
     attributes:
       label: Version or commit
-      description: State the released version, local commit, or scaffold state that you tested.
-      placeholder: No released version; describe the local commit or scaffold state.
+      description: State the released version or local commit that you tested.
+      placeholder: No released version; describe the local commit.
     validations:
       required: true
 
