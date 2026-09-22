@@ -1,5 +1,5 @@
 import { execFile as execFileCallback } from "node:child_process";
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rm, utimes, writeFile } from "node:fs/promises";
 import { mkdtemp } from "node:fs/promises";
 import { promisify } from "node:util";
 import { tmpdir } from "node:os";
@@ -102,6 +102,19 @@ describe("selection persistence", () => {
     expect(resolveActiveStyle(createBuiltinRegistry(), selectedId).id).toBe("default");
     expect(errors).toHaveLength(1);
     expect(errors[0]?.message).toMatch(/unknown|style/i);
+  });
+
+  it("reclaims an old lock and records ownership for safe release", async () => {
+    const agentDirectory = await createAgentDirectory();
+    const lockDirectory = join(agentDirectory, "pi-output-styles.selection.json.lock");
+    await mkdir(lockDirectory);
+    const oldTime = new Date(Date.now() - 31_000);
+    await utimes(lockDirectory, oldTime, oldTime);
+
+    await createSelectionStore(agentDirectory, { validStyleIds: ["concise"] }).write("concise");
+
+    await expect(readFile(join(agentDirectory, "pi-output-styles.selection.json"), "utf8")).resolves.toMatch(/concise/);
+    await expect(readFile(join(lockDirectory, "owner"), "utf8")).rejects.toMatchObject({ code: "ENOENT" });
   });
 
   it("waits for a selection lock held by another process", async () => {

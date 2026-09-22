@@ -8,14 +8,19 @@ import { createBuiltinRegistry } from "./styles/registry.js";
 export default async function registerOutputStylesExtension(pi: ExtensionAPI): Promise<void> {
   const registry = createBuiltinRegistry();
   const startupErrors: Error[] = [];
+  let readingStartupSelection = true;
   const selection = createSelectionStore(getAgentDir(), {
     validStyleIds: registry.list().map((style) => style.id),
     onError: (error) => {
-      startupErrors.push(error);
+      if (readingStartupSelection) {
+        startupErrors.push(error);
+      }
       console.error(`[pi-output-styles] ${error.message}`);
     },
   });
-  const state = new SelectionState(await selection.read());
+  const initialSelection = await selection.read();
+  readingStartupSelection = false;
+  const state = new SelectionState(initialSelection);
 
   pi.on("session_start", (_event, ctx) => {
     for (const error of startupErrors.splice(0)) {

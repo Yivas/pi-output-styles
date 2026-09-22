@@ -146,21 +146,24 @@ function removeWriteQueue(path: string, write: Promise<void>): void {
 }
 
 async function withSelectionLock<T>(lockPath: string, operation: () => Promise<T>): Promise<T> {
-  await acquireSelectionLock(lockPath);
+  const ownerToken = await acquireSelectionLock(lockPath);
   try {
     return await operation();
   } finally {
-    await rm(lockPath, { recursive: true, force: true });
+    await releaseSelectionLock(lockPath, ownerToken);
   }
 }
 
-async function acquireSelectionLock(lockPath: string): Promise<void> {
+async function acquireSelectionLock(lockPath: string): Promise<string> {
+  const ownerToken = randomUUID();
   while (true) {
     try {
       await mkdir(lockPath);
-      return;
+      await writeFile(join(lockPath, "owner"), ownerToken, { encoding: "utf8", flag: "wx" });
+      return ownerToken;
     } catch (error) {
       if (!isAlreadyExists(error)) {
+        await rm(lockPath, { recursive: true, force: true }).catch(() => undefined);
         throw error;
       }
 
@@ -176,6 +179,19 @@ async function acquireSelectionLock(lockPath: string): Promise<void> {
         }
       }
       await new Promise((resolve) => setTimeout(resolve, lockRetryDelayMs));
+    }
+  }
+}
+
+async function releaseSelectionLock(lockPath: string, ownerToken: string): Promise<void> {
+  try {
+    const currentOwner = await readFile(join(lockPath, "owner"), "utf8");
+    if (currentOwner === ownerToken) {
+      await rm(lockPath, { recursive: true, force: true });
+    }
+  } catch (error) {
+    if (!isMissingFile(error)) {
+      throw error;
     }
   }
 }

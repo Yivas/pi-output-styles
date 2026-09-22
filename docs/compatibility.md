@@ -30,7 +30,7 @@ Pi `0.87.0` does not expose a public generic writer for extension-owned settings
 
 The file is outside the `output-styles/` Markdown discovery directory. Writes use a temporary JSON file followed by rename and are serialized by both a process-local queue and a filesystem lock. Missing, unreadable, malformed, or unknown selections fall back to `default` and report an error. Persistence was checked with a new store and a new extension instance using temporary local directories.
 
-Writes acquire an exclusive lock directory beside the selection file, so separate Pi processes serialize the temporary-file rename. A stale lock older than 30 seconds is removed before retrying. The package does not write Pi's `settings.json` and does not use `appendEntry` as a substitute for durable selection storage.
+Writes acquire an exclusive lock directory beside the selection file, so separate Pi processes serialize the temporary-file rename. Each lock records an owner token; a stale lock older than 30 seconds may be reclaimed, and a previous owner can only release the lock if its token still matches. The package does not write Pi's `settings.json` and does not use `appendEntry` as a substitute for durable selection storage.
 
 ## Not covered
 
