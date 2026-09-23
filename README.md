@@ -28,7 +28,7 @@ The waiting-turn reminder is fail-closed: Pi 0.87.0 does not expose a verified h
 
 ## Status and compatibility
 
-The extension is executable and covered by the repository's local checks. The verified compatibility baseline is Pi `0.87.0`; other Pi versions have not been run. Installation from the npm registry has not been run.
+The extension is executable and covered by the repository's local checks. The verified compatibility baseline is Pi `0.87.0`; other Pi versions have not been run. Installation of `pi-response-styles@0.2.0` from the npm registry has been verified.
 
 ## Installation
 

@@ -47,10 +47,18 @@ The file is outside the `output-styles/` Markdown discovery directory. Writes us
 
 Writes acquire an exclusive lock directory beside the selection file, so separate Pi processes serialize the temporary-file rename. Each lock records an owner token; a stale lock older than 30 seconds may be reclaimed, and a previous owner can only release the lock if its token still matches. The package does not write Pi's `settings.json` and does not use `appendEntry` as a substitute for durable selection storage.
 
+## Registry installation
+
+`pi-response-styles@0.2.0` was installed from the npm registry on 2026-09-23 with `npm install pi-response-styles@0.2.0` in a temporary directory outside the repositories, and the installed artifact was verified:
+
+- Integrity: `dist.shasum` `dc628ca872524343ba818f88c00e5bb9e62dc52e` and `dist.integrity` `sha512-gZso5dbFh16WGusH5VZUUqn7cB/Iu08QPo26EhVi+cxZPMMesg8t/F0LwKfzk+L3iU1pdfBxcc/BlvK3Fwh4ig==`, matching the values frozen at publication.
+- Content: 22 files — `package.json`, `README.md`, `LICENSE`, `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `docs/compatibility.md`, and the 15 TypeScript files under `src/`. A search of the installed files found no `test/`, `planning/`, or `.github/` entries, secrets, or personal paths.
+- Entry contract: the installed manifest declares `pi.extensions: ["./src/extension.ts"]`, and that file exists in the artifact. The manifest declares no `main` and no `exports`: the package is consumed through Pi's extension loader, which loads the declared entry with its own TypeScript loader and supplies `@earendil-works/pi-coding-agent` — the entry's only external runtime import (`getAgentDir`) — as a virtual module. A bare `import("pi-response-styles")` from plain Node.js is not a supported entry point and fails with `ERR_MODULE_NOT_FOUND`.
+- Loading evidence: effective loading is covered by the local test suite against the real Pi `ExtensionRunner`, from source (`test/integration/`). The suite exercises repository source, not the installed tarball.
+
 ## Not covered
 
 - Pi versions other than `0.87.0`: not-run.
-- Registry installation: not-run.
 - User and project custom style discovery: covered by local fixture and integration tests for the approved user/project directories, precedence, malformed files, and fallback behavior.
 - Plugin-forced temporary styles: the programmatic `ForcedStyleController` factory is covered by local tests. The controller is process-local; Pi does not expose an approved inter-extension mechanism for handing it to a separate plugin, so cross-plugin force delivery is not implemented and remains not-run.
 - `waitingTurnReminder`: blocked (FAIL-CLOSED); no public background-only waiting event exists in Pi `0.87.0`.
