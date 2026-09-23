@@ -4,6 +4,28 @@ All notable changes to `pi-output-styles` are documented here.
 
 ## Unreleased
 
+### Added
+
+- Turn-start style reminders: `Proactive` and `Concise` emit one notification at the start of each turn; `default`, `Explanatory`, and `Learning` stay silent.
+
+### Changed
+
+- All five built-in style texts were rewritten from scratch in English with the depth of the approved output-style specification: `Proactive` gains an active-style section with six numbered rules, `Concise` six numbered rules plus a final precedence clause, `Explanatory` an educational frame with an in-conversation insight block of 2-3 key points, and `Learning` a human-contribution protocol with 2-10/20+ line thresholds, `TODO(human)` markers, a three-field request block, three worked examples, and an insight closing.
+- `default` is now pure: empty instructions and `keepCodingInstructions: false`, so selecting it leaves Pi's system prompt untouched instead of appending the base coding block (previously every built-in appended it).
+
+### Fixed
+
+- Version and channel claims now match the verified registries: the release lives on GitHub as `v0.1.0`, and the npm package `pi-response-styles` has no published version until `0.2.0` (compatibility document, README, contributing guide, and the issue and pull request templates).
+
+### Security
+
+- Closed the development-only advisories `GHSA-5xrq-8626-4rwp` and `GHSA-82fw-gwwq-j7x9` by raising `vitest` from `3.2.4` to `4.1.11` and declaring `vite-node` `6.0.0` explicitly; `npm audit` reports no vulnerabilities for runtime and development dependencies. `@earendil-works/pi-coding-agent` remains pinned at `0.87.0`.
+
+### Known limitations
+
+- The `Proactive` `waitingTurnReminder` is declared but never emitted: Pi `0.87.0` exposes no waiting-only hook, so it fails closed with no polling, timer, or prompt substitute.
+- Cross-plugin force interoperability has not been run and is not provided as a claim.
+
 ## [0.1.0] - 2026-09-23
 
 This release contains the implemented output-style extension from the initial development fronts.
