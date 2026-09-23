@@ -2,18 +2,18 @@
 
 ## Supported versions
 
-The supported version is `0.2.0`. Security reports are accepted for that release and for repository commits after it; the only verified Pi compatibility baseline is `0.87.0`.
+The supported version is `0.3.0`. Security reports are accepted for that release and for repository commits after it; the only verified Pi compatibility baseline is `0.87.0`.
 
 | Version or line | Support status |
 | --- | --- |
-| 0.2.0 | Supported; compatibility checked against Pi `0.87.0` only |
-| Repository commits after 0.2.0 | Security reports accepted; not a numbered release |
+| 0.3.0 | Supported; compatibility checked against Pi `0.87.0` only |
+| Repository commits after 0.3.0 | Security reports accepted; not a numbered release |
 
 ## Scope and product boundaries
 
 `pi-output-styles` is an implemented Pi extension that selects and applies response-style instructions. It includes built-in styles, the `/output-style` command, system-prompt injection, selection persistence, turn-start reminders, `keep-coding-instructions`, custom user and project styles, and a process-local forced-style API. Custom styles take precedence in the order built-in, user, then project.
 
-The extension does not change the model, provider, reasoning, or permissions. It does not integrate other plugins or subagents, and it does not add telemetry or functional network access. The waiting-turn reminder is fail-closed because Pi `0.87.0` exposes no verified waiting-only hook. Cross-plugin force interoperability has not been run; forced styles are process-local.
+The extension does not change the model, provider, reasoning, or permissions. It does not integrate other plugins or subagents, and it does not add telemetry or functional network access. The waiting-turn reminder is fail-closed because Pi `0.87.0` exposes no verified waiting-only hook. Cross-plugin force delivery runs over Pi's shared in-process event bus and is covered by the integration tests in both extension load orders; forced styles carry no priority or isolation guarantees.
 
 Style contents are treated as untrusted input. The extension injects them as instructions that can influence responses; it does not execute them as code or treat them as a security boundary. Do not put credentials, tokens, private prompts, or other secrets in a style file.
 
@@ -33,7 +33,7 @@ Do not disclose sensitive vulnerability details in a public issue. Use the repos
 
 A useful report should include:
 
-- The version or commit tested: the release version (currently `0.2.0`) or the repository commit.
+- The version or commit tested: the release version (currently `0.3.0`) or the repository commit.
 - The environment, including the Pi version, operating system, and relevant runtime details.
 - A minimal, sanitized reproduction.
 - The security impact and affected behavior.

@@ -4,13 +4,29 @@ All notable changes to `pi-output-styles` are documented here.
 
 ## Unreleased
 
+## [0.3.0] - 2026-09-23
+
 ### Added
 
 - Cross-plugin force delivery: another extension receives the live `ForcedStyleController` through Pi's shared event bus on `pi-response-styles:style-controller` after emitting `pi-response-styles:style-controller-request`; integration tests cover both extension load orders and release.
 
 ### Changed
 
-- The npm package allowlist now includes `CHANGELOG.md`; it will be published with the next version (`pi-response-styles@0.2.0` predates this change).
+- The npm package ships `CHANGELOG.md`: the tarball allowlist includes it, so `pi-response-styles@0.3.0` carries the release history (`pi-response-styles@0.2.0` predates this change).
+
+### Fixed
+
+- The compatibility document and the README status now record what has actually been verified: the npm registry installation of `0.2.0` and the cross-plugin force delivery over `pi.events`, replacing the previous `not-run` statements for both.
+
+### Compatibility
+
+- Verified against Pi `0.87.0`.
+- Other Pi versions have not been run.
+
+### Known limitations
+
+- The `Proactive` `waitingTurnReminder` is declared but never emitted: Pi `0.87.0` exposes no public waiting-only hook, so it fails closed with no polling, timer, or prompt substitute. Implementing it requires a new version of Pi.
+- No third-party plugin itself has been tested against the event bus; the bus payload is untyped, so a receiver must verify the shape it gets.
 
 ## [0.2.0] - 2026-09-23
 
