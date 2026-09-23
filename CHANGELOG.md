@@ -4,6 +4,8 @@ All notable changes to `pi-output-styles` are documented here.
 
 ## Unreleased
 
+## [0.2.0] - 2026-09-23
+
 ### Added
 
 - Turn-start style reminders: `Proactive` and `Concise` emit one notification at the start of each turn; `default`, `Explanatory`, and `Learning` stay silent.
@@ -15,11 +17,16 @@ All notable changes to `pi-output-styles` are documented here.
 
 ### Fixed
 
-- Version and channel claims now match the verified registries: the release lives on GitHub as `v0.1.0`, and the npm package `pi-response-styles` has no published version until `0.2.0` (compatibility document, README, contributing guide, and the issue and pull request templates).
+- Version and channel claims now match the verified registries: the release lives on GitHub as `v0.2.0` and on npm as `pi-response-styles@0.2.0`, its first npm version (compatibility document, README, contributing guide, and the issue and pull request templates).
 
 ### Security
 
 - Closed the development-only advisories `GHSA-5xrq-8626-4rwp` and `GHSA-82fw-gwwq-j7x9` by raising `vitest` from `3.2.4` to `4.1.11` and declaring `vite-node` `6.0.0` explicitly; `npm audit` reports no vulnerabilities for runtime and development dependencies. `@earendil-works/pi-coding-agent` remains pinned at `0.87.0`.
+
+### Compatibility
+
+- Verified against Pi `0.87.0`.
+- Other Pi versions have not been run.
 
 ### Known limitations
 
