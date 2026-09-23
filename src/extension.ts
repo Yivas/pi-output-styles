@@ -11,6 +11,8 @@ import { loadCustomStyles } from "./styles/custom-loader.js";
 import { mergeStyleSources } from "./styles/merge.js";
 import { createBuiltinRegistry, resolveActiveStyle } from "./styles/registry.js";
 import { createForcedStyleController } from "./styles/forced.js";
+import { paintStyleStatus, type StatusIndicatorHost } from "./ui/status-indicator.js";
+import type { StyleMenuTheme } from "./ui/style-menu.js";
 
 export { ForcedStyleController, createForcedStyleController } from "./styles/forced.js";
 export type { ForcedStyleHandle, ForcedStyleWarning, ForcedStyleWarningHandler } from "./styles/forced.js";
@@ -46,9 +48,12 @@ export default async function registerOutputStylesExtension(pi: ExtensionAPI): P
     startupErrors.push(new Error(warning.message));
     console.error(`[pi-output-styles] ${warning.message}`);
   });
+  // Captured from the first TUI session_start so later fallbacks can repaint the bar.
+  let repaintIndicator: (() => void) | undefined;
   const reportResolutionWarning = (warning: { message: string }): void => {
     state.setSelected("default");
     startupErrors.push(new Error(warning.message));
+    repaintIndicator?.();
   };
   const getSelectedStyleId = () => forcedStyles.resolve(state.getSelected());
 
@@ -58,11 +63,17 @@ export default async function registerOutputStylesExtension(pi: ExtensionAPI): P
         ctx.ui.notify(error.message, "error");
       }
     }
+    if (ctx.mode === "tui") {
+      const ui: StatusIndicatorHost = ctx.ui;
+      const theme: StyleMenuTheme = ctx.ui.theme;
+      repaintIndicator = () => paintStyleStatus(ui, theme, getActiveStyle());
+      repaintIndicator();
+    }
   });
   const getActiveStyle = () => resolveActiveStyle(mergedStyles.registry, getSelectedStyleId(), reportResolutionWarning);
   registerSystemPromptHook(pi, mergedStyles.registry, getSelectedStyleId, reportResolutionWarning);
   registerStyleReminders(pi, getActiveStyle);
-  registerOutputStyleCommand(pi, mergedStyles.registry, state, selection);
+  registerOutputStyleCommand(pi, mergedStyles.registry, state, selection, () => forcedStyles.activeForce());
   registerStyleControllerInterop(pi, forcedStyles);
 }
 

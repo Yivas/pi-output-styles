@@ -4,6 +4,23 @@ All notable changes to `pi-output-styles` are documented here.
 
 ## Unreleased
 
+### Added
+
+- `/output-style` with no arguments now opens an interactive menu in TUI sessions: a navigable style list (active marker and origin) beside a live detail panel with the description and the style's real metadata (`turn reminder`, `keep-coding`, `waiting reminder: unavailable (Pi)` when Pi cannot deliver it, and `from <path>` for custom styles). Enter applies and persists the selection; Esc cancels.
+- A `style: <name>` indicator in the status bar follows the effective style: muted for `default`, accent otherwise, painted at session start and after every selection change.
+- While another plugin forces a style, the menu shows `Forced by <plugin> — selection overridden` with every row muted and Enter disabled until the force is released.
+- Below 80 columns the detail panel collapses and the active row carries its description inline.
+
+### Changed
+
+- Only the no-argument TUI route changed: `/output-style <id>` and `/output-style status` keep their previous behavior, and RPC, JSON and print modes keep the plain-text listing without dialogs.
+
+### Known limitations
+
+- The detail panel shows the description and metadata; the scrollable instruction body is not included yet.
+- The status-bar entry is painted with the theme current at write time and repainted on session start and selection changes, not when the theme changes.
+- Rendering inside a full Pi TUI session (menu in context and the indicator inside the footer) awaits the visual checkpoint; the component renders were captured through Pi's own theme and overlay path.
+
 ## [0.3.0] - 2026-09-23
 
 ### Added

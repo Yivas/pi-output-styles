@@ -27,6 +27,34 @@ describe("ForcedStyleController", () => {
     expect(controller.resolve("default")).toBe("proactive");
   });
 
+  it("reports the active force without exposing the internal entry", () => {
+    const controller = new ForcedStyleController(createBuiltinRegistry());
+    expect(controller.activeForce()).toBeUndefined();
+
+    const force = controller.force("plugin-a", "concise");
+    const active = controller.activeForce();
+    expect(active).toEqual({ pluginId: "plugin-a", styleId: "concise" });
+
+    if (active) {
+      active.styleId = "proactive";
+    }
+    expect(controller.activeForce()).toEqual({ pluginId: "plugin-a", styleId: "concise" });
+
+    force.release();
+    expect(controller.activeForce()).toBeUndefined();
+  });
+
+  it("keeps the first active force when plugins request different styles", () => {
+    const controller = new ForcedStyleController(createBuiltinRegistry());
+    const first = controller.force("plugin-a", "concise");
+    controller.force("plugin-b", "proactive");
+
+    expect(controller.activeForce()).toEqual({ pluginId: "plugin-a", styleId: "concise" });
+
+    first.release();
+    expect(controller.activeForce()).toEqual({ pluginId: "plugin-b", styleId: "proactive" });
+  });
+
   it("reports an invalid force without hiding the normal selection", () => {
     const warning = vi.fn();
     const controller = new ForcedStyleController(createBuiltinRegistry(), warning);

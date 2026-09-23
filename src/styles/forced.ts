@@ -70,6 +70,11 @@ export class ForcedStyleController {
     };
   }
 
+  activeForce(): { pluginId: string; styleId: string } | undefined {
+    const firstForce = this.activeForces[0];
+    return firstForce ? { ...firstForce } : undefined;
+  }
+
   resolve(selectedId: string | undefined): string | undefined {
     while (this.activeForces.length > 0) {
       const firstForce = this.activeForces[0];

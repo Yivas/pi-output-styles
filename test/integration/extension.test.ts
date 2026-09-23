@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
@@ -12,6 +12,8 @@ vi.mock("@earendil-works/pi-coding-agent", async (importOriginal) => {
 });
 
 import extension from "../../src/extension.js";
+import { STYLE_CONTROLLER_CHANNEL, STYLE_CONTROLLER_REQUEST_CHANNEL } from "../../src/interop.js";
+import { ForcedStyleController } from "../../src/styles/forced.js";
 import {
   createEventBus,
   discoverAndLoadExtensions,
@@ -28,8 +30,11 @@ import {
 
 const temporaryDirectories: string[] = [];
 const originalAgentDirectory = process.env.PI_CODING_AGENT_DIR;
+let cwdSpy: ReturnType<typeof vi.spyOn> | undefined;
 
 afterEach(async () => {
+  cwdSpy?.mockRestore();
+  cwdSpy = undefined;
   mockedAgentDirectory.path = "";
   if (originalAgentDirectory === undefined) {
     delete process.env.PI_CODING_AGENT_DIR;
@@ -194,5 +199,133 @@ describe("extension factory", () => {
     expect(afterWrite).toEqual({
       systemPrompt: "Native instructions",
     });
+  });
+});
+
+function fakeTheme() {
+  return {
+    fg: (color: string, text: string) => `[${color}]${text}[/]`,
+  };
+}
+
+describe("status indicator wiring", () => {
+  it("paints the effective style on session_start in TUI mode", async () => {
+    const agentDirectory = await mkdtemp(join(tmpdir(), "pi-output-styles-indicator-"));
+    temporaryDirectories.push(agentDirectory);
+    const extensionApi = await startExtension(agentDirectory);
+    const setStatus = vi.fn();
+
+    await extensionApi.handlers.get("session_start")?.({}, {
+      mode: "tui",
+      hasUI: true,
+      ui: { notify: vi.fn(), setStatus, theme: fakeTheme() },
+    });
+
+    expect(setStatus).toHaveBeenCalledWith("pi-output-styles", "[muted]style: default[/]");
+  });
+
+  it("shows default in the indicator and keeps the visible error for an unknown persisted selection", async () => {
+    const agentDirectory = await mkdtemp(join(tmpdir(), "pi-output-styles-indicator-fallback-"));
+    temporaryDirectories.push(agentDirectory);
+    await writeFile(
+      join(agentDirectory, "pi-output-styles.selection.json"),
+      `${JSON.stringify({ selectedStyle: "ghost" }, null, 2)}\n`,
+    );
+    const extensionApi = await startExtension(agentDirectory);
+    const setStatus = vi.fn();
+    const notify = vi.fn();
+
+    await extensionApi.handlers.get("session_start")?.({}, {
+      mode: "tui",
+      hasUI: true,
+      ui: { notify, setStatus, theme: fakeTheme() },
+    });
+
+    expect(notify).toHaveBeenCalledWith(expect.stringMatching(/unknown output style: ghost/i), "error");
+    expect(setStatus).toHaveBeenCalledWith("pi-output-styles", "[muted]style: default[/]");
+  });
+
+  it("leaves the status bar untouched outside TUI mode", async () => {
+    const agentDirectory = await mkdtemp(join(tmpdir(), "pi-output-styles-indicator-rpc-"));
+    temporaryDirectories.push(agentDirectory);
+    const extensionApi = await startExtension(agentDirectory);
+    const setStatus = vi.fn();
+
+    await extensionApi.handlers.get("session_start")?.({}, {
+      mode: "rpc",
+      hasUI: true,
+      ui: { notify: vi.fn(), setStatus },
+    });
+
+    expect(setStatus).not.toHaveBeenCalled();
+  });
+});
+
+describe("custom style load warnings", () => {
+  it("reports a malformed style file and a project-over-user collision at session start", async () => {
+    const projectRoot = await mkdtemp(join(tmpdir(), "pi-output-styles-load-warnings-"));
+    temporaryDirectories.push(projectRoot);
+    const agentDirectory = join(projectRoot, ".pi", "agent");
+    await mkdir(join(agentDirectory, "output-styles"), { recursive: true });
+    await mkdir(join(projectRoot, ".pi", "output-styles"), { recursive: true });
+    await writeFile(join(projectRoot, ".pi", "output-styles", "Broken.md"), "not a style file\n");
+    const frontmatter = "---\nname: Team\ndescription: Team response guidance.\nkeep-coding-instructions: false\n---\nUse team guidance.\n";
+    await writeFile(join(agentDirectory, "output-styles", "Team.md"), frontmatter);
+    await writeFile(join(projectRoot, ".pi", "output-styles", "Team.md"), frontmatter);
+    cwdSpy = vi.spyOn(process, "cwd").mockReturnValue(projectRoot);
+
+    const extensionApi = await startExtension(agentDirectory);
+    const notify = vi.fn();
+    await extensionApi.handlers.get("session_start")?.({}, { hasUI: true, ui: { notify } });
+
+    expect(notify).toHaveBeenCalledWith(
+      expect.stringMatching(/Could not load custom style .*Broken\.md/i),
+      "error",
+    );
+    expect(notify).toHaveBeenCalledWith(
+      expect.stringMatching(/Style collision for team: user is overridden by project/i),
+      "error",
+    );
+  });
+});
+
+describe("forced style in the menu", () => {
+  it("renders the force banner from the controller delivered over the product's event bus", async () => {
+    const agentDirectory = await mkdtemp(join(tmpdir(), "pi-output-styles-force-banner-"));
+    temporaryDirectories.push(agentDirectory);
+    const extensionApi = await startExtension(agentDirectory);
+
+    let controller: ForcedStyleController | undefined;
+    extensionApi.api.events.on(STYLE_CONTROLLER_CHANNEL, (payload: unknown) => {
+      controller = payload as ForcedStyleController;
+    });
+    extensionApi.api.events.emit(STYLE_CONTROLLER_REQUEST_CHANNEL, undefined);
+    expect(controller).toBeDefined();
+    controller?.force("plugin-a", "concise");
+
+    let rendered = "";
+    const custom = vi.fn(async (factory: (
+      tui: unknown,
+      theme: unknown,
+      keybindings: unknown,
+      done: (result: string | null) => void,
+    ) => { render(width: number): string[] }) => {
+      const component = factory({ requestRender: vi.fn() }, {
+        fg: (color: string, text: string) => `[${color}]${text}[/]`,
+      }, {}, () => null);
+      rendered = component.render(120).join("\n");
+      return null;
+    });
+    const notify = vi.fn();
+    const context = {
+      mode: "tui",
+      hasUI: true,
+      ui: { notify, custom, setStatus: vi.fn(), theme: { fg: (c: string, t: string) => `[${c}]${t}[/]` } },
+    } as never;
+
+    const command = extensionApi.commands.get("output-style");
+    await command?.handler("", context);
+
+    expect(rendered).toContain("Forced by plugin-a — selection overridden");
   });
 });
