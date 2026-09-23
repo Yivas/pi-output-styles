@@ -6,7 +6,7 @@ The compatibility statements in this document are limited to the Pi installation
 
 - Pi package: local dependency `@earendil-works/pi-coding-agent` `0.87.0` (the API probe pins `PI_PACKAGE_DIR` to this dependency so an unrelated global Pi installation cannot change the observed version)
 - Node.js: the local Node.js `v24.9.0` installation used for the checks
-- Package status: `pi-response-styles` `0.3.0` published on GitHub Releases as `v0.3.0` and on npm as `pi-response-styles@0.3.0`; compatibility verified against Pi `0.87.0` only; `waitingTurnReminder` blocked (FAIL-CLOSED); cross-plugin force delivery through `pi.events` covered by local integration tests
+- Package status: `pi-response-styles` `0.4.0` published on GitHub Releases as `v0.4.0` and on npm as `pi-response-styles@0.4.0`; compatibility verified against Pi `0.87.0` only; `waitingTurnReminder` blocked (FAIL-CLOSED); cross-plugin force delivery through `pi.events` covered by local integration tests
 
 ## Observed extension API
 
@@ -48,6 +48,17 @@ The file is outside the `output-styles/` Markdown discovery directory. Writes us
 
 Writes acquire an exclusive lock directory beside the selection file, so separate Pi processes serialize the temporary-file rename. Each lock records an owner token; a stale lock older than 30 seconds may be reclaimed, and a previous owner can only release the lock if its token still matches. The package does not write Pi's `settings.json` and does not use `appendEntry` as a substitute for durable selection storage.
 
+## Style menu and status indicator
+
+Version `0.4.0` adds two TUI surfaces, covered by the local suite (`test/ui/style-menu.test.ts`, `test/ui/status-indicator.test.ts`, `test/commands.test.ts`, `test/integration/extension.test.ts`) and by render captures taken through Pi's own theme and overlay path at 40, 79, 80, and 120 columns:
+
+- Opening `/output-style` with no arguments in a TUI session (`ctx.mode === "tui"`) shows an overlay menu: a navigable list (active marker and origin) beside a detail panel with the description, the style metadata line (`turn reminder`, `keep-coding`, `waiting reminder: unavailable (Pi)` when Pi cannot deliver it, `from <path>` for custom styles), and the wrapped instruction body. Enter applies and persists the selection through the same path as `/output-style <id>`; Esc cancels without changes. With the explicit `list` argument, and in RPC, JSON, and print modes, the command keeps the plain-text listing without dialogs.
+- The body scrolls with `PgUp`/`PgDn`/`Home`/`End` in every mode and with the mouse wheel. The wheel reaches the menu only in Pi's fullscreen TUI mode (`tuiMode: "fullscreen"`); in the default regular mode Pi keeps the wheel for its scrollback, so the footer keys are the portable scroll path.
+- Below 80 render columns the detail panel collapses and the active row carries its description inline; the collapsed layout has no room for the status line.
+- While another plugin forces a style the menu shows `Forced by <plugin> — selection overridden` with every row muted and Enter disabled until the force is released. Load warnings are reported at session start, and a persisted selection that no longer exists falls back to `default` in both the menu marker and the indicator.
+- Borders, optional banner, list, detail, and footer share one row budget, so the status line never renders past the rows the overlay paints; terminals shorter than about 8 rows can clip the menu.
+- The status bar shows `style: <name>` for the effective style under the extension-owned key `pi-output-styles`: muted for `default`, accent otherwise. It is painted in TUI mode at session start, after a direct selection, and after the menu's Enter. Colors come from the theme current at write time; a theme change does not repaint an already-written entry.
+
 ## Registry installation
 
 `pi-response-styles@0.2.0` was installed from the npm registry on 2026-09-23 with `npm install pi-response-styles@0.2.0` in a temporary directory outside the repositories, and the installed artifact was verified:
@@ -66,4 +77,5 @@ Writes acquire an exclusive lock directory beside the selection file, so separat
 - `turnReminder` hook registration and notification dispatch: available and implemented through `registerStyleReminders`; emission is covered by unit and ExtensionRunner probes without a provider.
 - `keep-coding-instructions`: available for the extension-owned coding block; Pi-native, project, and opaque third-party instructions cannot be selectively removed.
 - Provider requests and network access: not-run and intentionally absent from the tests.
+- Style menu and status indicator in an interactive session: component renders were captured through Pi's real theme and overlay path at several widths; an interactive human pass over the live menu has not been run.
 - Cross-process contention: checked with a separate local Node process waiting on the selection lock; the lock uses the filesystem's atomic directory creation primitive.
