@@ -1,0 +1,14 @@
+# Dependabot version updates: weekly npm updates grouped into a single PR
+# to avoid update noise.
+# The github-actions ecosystem is omitted because the repository has no
+# .github/workflows/ directory; add it once workflows exist.
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      all-npm-dependencies:
+        patterns:
+          - "*"
