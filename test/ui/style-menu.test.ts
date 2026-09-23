@@ -393,14 +393,14 @@ describe("StyleMenu instructions body", () => {
   it("keeps other styles' bodies out of the detail while navigating", () => {
     const menu = createMenu(createBuiltinRegistry(), { activeStyleId: "concise" });
     const first = menu.render(120).join("\n");
-    expect(first).toContain("Never trade correctness for brevity");
+    expect(first).toContain("Brevity never outranks correctness");
     expect(first).not.toContain("Add one insight block before writing code");
 
     menu.handleInput("\x1b[B");
 
     const moved = menu.render(120).join("\n");
     expect(moved).toContain("Add one insight block before writing code");
-    expect(moved).not.toContain("Never trade correctness for brevity");
+    expect(moved).not.toContain("Brevity never outranks correctness");
   });
 
   it("drops the body below 80 columns and keeps the description in the row", () => {
@@ -408,7 +408,7 @@ describe("StyleMenu instructions body", () => {
     const output = lines.join("\n");
 
     expect(output).toContain("Answer with the result first, without preamble or narration.");
-    expect(output).not.toContain("Never trade correctness for brevity");
+    expect(output).not.toContain("Brevity never outranks correctness");
     for (const line of lines) {
       expect(renderedWidth(line)).toBeLessThanOrEqual(79);
     }

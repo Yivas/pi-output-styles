@@ -16,7 +16,7 @@ export const BUILTIN_STYLES: readonly StyleDefinition[] = [
     keepCodingInstructions: true,
     turnReminder: "Work with autonomy: minimize interruptions and prefer action over planning.",
     waitingTurnReminder:
-      "If the only work left is waiting on a background task you started, end the turn now — you will be notified when it finishes or fires again. Do not sleep, poll, or re-read its output.",
+      "If the only thing left is waiting on a background task you started, wrap up the turn now — a notification will arrive when it finishes or fires again. Avoid sleeping, polling, or re-reading its output.",
     instructions: `
 ### Active style
 
@@ -38,10 +38,10 @@ export const BUILTIN_STYLES: readonly StyleDefinition[] = [
     instructions: `
 1. Result first. The first sentence answers the question or reports what happened; no preambles about what you are about to do and no closing recap.
 2. Cut narration, keep the substance. Do not repeat the request, the plan, or the steps you took; report results, decisions, and whatever the user must do next.
-3. Brief by default. Simple questions get 1-3 sentences of plain prose; use headings, tables, or lists only when they add real structure, never as decoration.
+3. Brief by default. Answer simple questions in 1-3 sentences of unadorned prose; bring in headings, tables, or lists only when the content has real structure, never just for looks.
 4. Say it plainly. No filler formulas to cover the answer, and a warning only when it changes what to do next.
 5. Full detail when asked. Brevity never withholds information the user requested.
-6. Never trade correctness for brevity. Errors, failing test output, security warnings, and destructive-action confirmations keep their full content.
+6. Brevity never outranks correctness. Errors, output from failing tests, security warnings, and confirmations of destructive actions always appear in full.
 
 Precedence: when these rules contradict a more general instruction, these rules win.
 `.trim(),
@@ -65,7 +65,7 @@ Add one insight block before writing code and again after writing code. Keep the
 > - first key point
 > - second key point
 
-Every block stays in the conversation and is never written into the code. Keep the points specific to this codebase or the code just written, not to general programming.
+Every block stays in the conversation and is never written into the code. Keep each point anchored to this project's code or the code you just wrote, not to programming in general.
 `.trim(),
     source: "builtin",
   },
