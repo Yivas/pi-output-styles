@@ -4,6 +4,7 @@ import { registerOutputStyleCommand } from "./commands.js";
 import { registerSystemPromptHook } from "./prompt.js";
 import { registerStyleReminders } from "./reminders.js";
 import { createSelectionStore } from "./settings.js";
+import { registerStyleControllerInterop } from "./interop.js";
 import { SelectionState } from "./state.js";
 import { discoverStyleFiles } from "./styles/discovery.js";
 import { loadCustomStyles } from "./styles/custom-loader.js";
@@ -62,6 +63,7 @@ export default async function registerOutputStylesExtension(pi: ExtensionAPI): P
   registerSystemPromptHook(pi, mergedStyles.registry, getSelectedStyleId, reportResolutionWarning);
   registerStyleReminders(pi, getActiveStyle);
   registerOutputStyleCommand(pi, mergedStyles.registry, state, selection);
+  registerStyleControllerInterop(pi, forcedStyles);
 }
 
 function loadStyles(projectRoot: string, homeDir: string, startupErrors: Error[]) {

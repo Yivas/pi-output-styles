@@ -22,7 +22,7 @@ The repository currently includes:
 - Persistence of the selected style in the extension-owned `<agentDir>/pi-output-styles.selection.json` file.
 - Turn-start reminders and the `keep-coding-instructions` behavior.
 - Custom styles from the user and project directories, with precedence `built-in < user < project`.
-- A process-local API for temporarily forcing a style. Cross-plugin force interoperability has not been run and is not provided as a claim.
+- A process-local API for temporarily forcing a style, also delivered to other extensions through Pi's shared event bus on `pi-response-styles:style-controller` (requested via `pi-response-styles:style-controller-request`).
 
 The waiting-turn reminder is fail-closed: Pi 0.87.0 does not expose a verified hook for waiting-only background work, so the extension does not emulate one with polling, timers, or other substitutes.
 

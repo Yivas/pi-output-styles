@@ -52,6 +52,7 @@ function createExtensionApi() {
     registerCommand(name: string, command: { handler: (args: string, context: ExtensionCommandContext) => Promise<void> }) {
       commands.set(name, command);
     },
+    events: createEventBus(),
   } as unknown as ExtensionAPI;
   return { api, handlers, commands };
 }

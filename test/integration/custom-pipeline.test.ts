@@ -6,6 +6,7 @@ import type {
   ExtensionCommandContext,
   RegisteredCommand,
 } from "@earendil-works/pi-coding-agent";
+import { createEventBus } from "@earendil-works/pi-coding-agent";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const mockedAgentDirectory = vi.hoisted(() => ({ path: "" }));
@@ -46,6 +47,7 @@ function createExtensionApi() {
     registerCommand(name: string, options: Omit<RegisteredCommand, "name" | "sourceInfo">) {
       commands.set(name, { name, sourceInfo: {} as RegisteredCommand["sourceInfo"], ...options });
     },
+    events: createEventBus(),
   } as unknown as ExtensionAPI;
   return { api, handlers, commands };
 }

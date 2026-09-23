@@ -15,6 +15,7 @@ import type {
   ExtensionCommandContext,
   RegisteredCommand,
 } from "@earendil-works/pi-coding-agent";
+import { createEventBus } from "@earendil-works/pi-coding-agent";
 import extension from "../../src/extension.js";
 
 const temporaryDirectories: string[] = [];
@@ -40,6 +41,7 @@ function createExtensionApi() {
     registerCommand(name: string, options: Omit<RegisteredCommand, "name" | "sourceInfo">) {
       commands.set(name, { name, sourceInfo: {} as RegisteredCommand["sourceInfo"], ...options });
     },
+    events: createEventBus(),
   } as unknown as ExtensionAPI;
   return { api, handlers, commands };
 }

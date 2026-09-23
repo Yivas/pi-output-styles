@@ -4,6 +4,10 @@ All notable changes to `pi-output-styles` are documented here.
 
 ## Unreleased
 
+### Added
+
+- Cross-plugin force delivery: another extension receives the live `ForcedStyleController` through Pi's shared event bus on `pi-response-styles:style-controller` after emitting `pi-response-styles:style-controller-request`; integration tests cover both extension load orders and release.
+
 ### Changed
 
 - The npm package allowlist now includes `CHANGELOG.md`; it will be published with the next version (`pi-response-styles@0.2.0` predates this change).

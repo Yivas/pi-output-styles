@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { vi, afterEach, describe, expect, it } from "vitest";
 import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
+import { createEventBus } from "@earendil-works/pi-coding-agent";
 import { BASE_CODING_INSTRUCTIONS } from "../../src/styles/coding-instructions.js";
 import type { StyleDefinition, StyleRegistry } from "../../src/styles/types.js";
 
@@ -73,6 +74,7 @@ function createExtensionApi(): ExtensionHarness {
     registerCommand(name: string, command: { handler: (args: string, context: ExtensionCommandContext) => Promise<void> }) {
       commands.set(name, command);
     },
+    events: createEventBus(),
   } as unknown as ExtensionAPI;
   return { api, handlers, commands };
 }

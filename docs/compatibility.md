@@ -6,7 +6,7 @@ The compatibility statements in this document are limited to the Pi installation
 
 - Pi package: local dependency `@earendil-works/pi-coding-agent` `0.87.0` (the API probe pins `PI_PACKAGE_DIR` to this dependency so an unrelated global Pi installation cannot change the observed version)
 - Node.js: the local Node.js `v24.9.0` installation used for the checks
-- Package status: `pi-response-styles` `0.2.0` published on GitHub Releases as `v0.2.0` and on npm as `pi-response-styles@0.2.0` (first npm version); compatibility verified against Pi `0.87.0` only; `waitingTurnReminder` blocked (FAIL-CLOSED); cross-plugin force interoperability not-run
+- Package status: `pi-response-styles` `0.2.0` published on GitHub Releases as `v0.2.0` and on npm as `pi-response-styles@0.2.0` (first npm version); compatibility verified against Pi `0.87.0` only; `waitingTurnReminder` blocked (FAIL-CLOSED); cross-plugin force delivery through `pi.events` covered by local integration tests
 
 ## Observed extension API
 
@@ -17,6 +17,7 @@ The local Pi types, documentation, and a no-network extension runner probe verif
 - `ctx.getSystemPrompt()`: exposes the current system prompt in an extension context.
 - `session_start`: is available for reporting startup persistence errors through the UI.
 - Later `before_agent_start` handlers can still replace the prompt. This extension does not claim priority over other extensions.
+- `pi.events`: the shared event bus (`Shared event bus for extension communication` at `dist/core/extensions/types.d.ts:1157-1158`; `emit(channel: string, data: unknown): void` and `on(channel: string, handler: (data: unknown) => void): () => void` at `dist/core/event-bus.d.ts:1-4`; documented at `docs/extensions.md:1832-1838`) delivers the live `ForcedStyleController` to other extensions.
 
 The probe also observed callback registration and dispatch for `turn_start`, `turn_end`, and `agent_settled` through the local `ExtensionRunner`, without a provider request or network access. A dedicated hook for waiting only on background work was not present. The `turnReminder` adapter emits through `turn_start` without adding the reminder to the system prompt. The extension composes its own coding block before the style instructions and never rewrites the chained native or project prompt.
 
@@ -60,7 +61,7 @@ Writes acquire an exclusive lock directory beside the selection file, so separat
 
 - Pi versions other than `0.87.0`: not-run.
 - User and project custom style discovery: covered by local fixture and integration tests for the approved user/project directories, precedence, malformed files, and fallback behavior.
-- Plugin-forced temporary styles: the programmatic `ForcedStyleController` factory is covered by local tests. The controller is process-local; Pi does not expose an approved inter-extension mechanism for handing it to a separate plugin, so cross-plugin force delivery is not implemented and remains not-run.
+- Plugin-forced temporary styles: the programmatic `ForcedStyleController` factory is covered by local tests, and cross-plugin force delivery runs over Pi's shared event bus: the extension emits the live controller on `pi-response-styles:style-controller` at load and re-emits it whenever another extension emits `pi-response-styles:style-controller-request`, so any load order works. `test/integration/style-controller-interop.test.ts` exercises delivery, forcing, and release through Pi's real loader and event bus in both load orders. The bus payload is untyped (`data: unknown`), so a receiver must verify the shape it gets, and no third-party plugin itself has been tested: that remains not-run.
 - `waitingTurnReminder`: blocked (FAIL-CLOSED); no public background-only waiting event exists in Pi `0.87.0`.
 - `turnReminder` hook registration and notification dispatch: available and implemented through `registerStyleReminders`; emission is covered by unit and ExtensionRunner probes without a provider.
 - `keep-coding-instructions`: available for the extension-owned coding block; Pi-native, project, and opaque third-party instructions cannot be selectively removed.
