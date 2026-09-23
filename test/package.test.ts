@@ -28,6 +28,7 @@ describe("package manifest", () => {
       "src",
       "docs/compatibility.md",
       "README.md",
+      "CHANGELOG.md",
       "LICENSE",
       "SECURITY.md",
       "CONTRIBUTING.md",

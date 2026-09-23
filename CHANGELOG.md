@@ -4,6 +4,10 @@ All notable changes to `pi-output-styles` are documented here.
 
 ## Unreleased
 
+### Changed
+
+- The npm package allowlist now includes `CHANGELOG.md`; it will be published with the next version (`pi-response-styles@0.2.0` predates this change).
+
 ## [0.2.0] - 2026-09-23
 
 ### Added
