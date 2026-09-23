@@ -50,7 +50,7 @@ Writes acquire an exclusive lock directory beside the selection file, so separat
 
 ## Style menu and status indicator
 
-Version `0.4.0` adds two TUI surfaces, covered by the local suite (`test/ui/style-menu.test.ts`, `test/ui/status-indicator.test.ts`, `test/commands.test.ts`, `test/integration/extension.test.ts`) and by render captures taken through Pi's own theme and overlay path at 40, 79, 80, and 120 columns:
+Version `0.4.0` adds two TUI surfaces, covered by the local suite (`test/ui/style-menu.test.ts`, `test/ui/status-indicator.test.ts`, `test/commands.test.ts`, `test/integration/extension.test.ts`), which renders the component with a test theme at 40, 79, 80, and 120 columns, and by render captures taken through Pi's own theme and overlay path at 79 and 80 columns:
 
 - Opening `/output-style` with no arguments in a TUI session (`ctx.mode === "tui"`) shows an overlay menu: a navigable list (active marker and origin) beside a detail panel with the description, the style metadata line (`turn reminder`, `keep-coding`, `waiting reminder: unavailable (Pi)` when Pi cannot deliver it, `from <path>` for custom styles), and the wrapped instruction body. Enter applies and persists the selection through the same path as `/output-style <id>`; Esc cancels without changes. With the explicit `list` argument, and in RPC, JSON, and print modes, the command keeps the plain-text listing without dialogs.
 - The body scrolls with `PgUp`/`PgDn`/`Home`/`End` in every mode and with the mouse wheel. The wheel reaches the menu only in Pi's fullscreen TUI mode (`tuiMode: "fullscreen"`); in the default regular mode Pi keeps the wheel for its scrollback, so the footer keys are the portable scroll path.
@@ -77,5 +77,5 @@ Version `0.4.0` adds two TUI surfaces, covered by the local suite (`test/ui/styl
 - `turnReminder` hook registration and notification dispatch: available and implemented through `registerStyleReminders`; emission is covered by unit and ExtensionRunner probes without a provider.
 - `keep-coding-instructions`: available for the extension-owned coding block; Pi-native, project, and opaque third-party instructions cannot be selectively removed.
 - Provider requests and network access: not-run and intentionally absent from the tests.
-- Style menu and status indicator in an interactive session: component renders were captured through Pi's real theme and overlay path at several widths; an interactive human pass over the live menu has not been run.
+- Style menu and status indicator in an interactive session: component renders were captured through Pi's real theme and overlay path at 79 and 80 columns, while renders at 40 and 120 columns come from the local suite's test theme; an interactive human pass over the live menu has not been run.
 - Cross-process contention: checked with a separate local Node process waiting on the selection lock; the lock uses the filesystem's atomic directory creation primitive.
