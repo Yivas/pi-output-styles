@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { sliceByColumn, stripTerminalSequences, visibleWidth } from "@earendil-works/pi-tui";
+import type { TuiMouseEvent } from "@earendil-works/pi-tui";
 import {
   StyleMenu,
   detailZoneStart,
@@ -67,16 +68,30 @@ function mixedRegistry(): StyleRegistry {
 
 function createMenu(
   registry: StyleRegistry,
-  overrides: { activeStyleId?: string; getForce?: () => StyleMenuForce | undefined } = {},
+  overrides: {
+    activeStyleId?: string;
+    getForce?: () => StyleMenuForce | undefined;
+    maxHeight?: () => number;
+  } = {},
 ): StyleMenu {
   return new StyleMenu({
     registry,
     theme: fakeTheme(),
     activeStyleId: overrides.activeStyleId ?? "default",
     getForce: overrides.getForce,
+    maxHeight: overrides.maxHeight ?? (() => 40),
     done: () => undefined,
     requestRender: () => undefined,
   });
+}
+
+function bodyMenu(instructions: string, maxHeight = 40): StyleMenu {
+  const registry = mergeStyleSources(
+    createBuiltinRegistry(),
+    [customStyle({ id: "body-style", name: "Body Style", instructions })],
+    [],
+  ).registry;
+  return createMenu(registry, { activeStyleId: "body-style", maxHeight: () => maxHeight });
 }
 
 describe("StyleMenu detail panel", () => {
@@ -192,6 +207,7 @@ describe("StyleMenu forced state", () => {
       theme: fakeTheme(),
       activeStyleId: "default",
       getForce: () => controller.activeForce(),
+      maxHeight: () => 40,
       done,
       requestRender,
     });
@@ -290,6 +306,7 @@ describe("StyleMenu keyboard", () => {
       registry: createBuiltinRegistry(),
       theme: fakeTheme(),
       activeStyleId: "default",
+      maxHeight: () => 40,
       done,
       requestRender,
     });
@@ -356,15 +373,6 @@ describe("StyleMenu instructions body", () => {
   const wideLine = "日本語 の 説明 行 を 含み ます 。";
   const instructionsFixture = [leadLine, wideLine, "Final short body line."].join("\n");
 
-  function bodyMenu(instructions: string): StyleMenu {
-    const registry = mergeStyleSources(
-      createBuiltinRegistry(),
-      [customStyle({ id: "body-style", name: "Body Style", instructions })],
-      [],
-    ).registry;
-    return createMenu(registry, { activeStyleId: "body-style" });
-  }
-
   it("shows the complete wrapped body, including wide characters, at 80 and 120 columns", () => {
     const bodyTokens = instructionsFixture.split(/\s+/);
 
@@ -406,7 +414,7 @@ describe("StyleMenu instructions body", () => {
     }
   });
 
-  it("keeps a 200+ line body complete and within width at 80 and 120 columns", () => {
+  it("windows a 200+ line body within the height budget at 80 and 120 columns", () => {
     const longBody = Array.from(
       { length: 210 },
       (_, index) => `Line ${index} of the long instructions body with several words to wrap.`,
@@ -415,12 +423,207 @@ describe("StyleMenu instructions body", () => {
     const lastTokens = longBody.split("\n")[209]!.split(/\s+/);
 
     for (const width of [80, 120]) {
-      const tokens = detailTokens(bodyMenu(longBody).render(width), width);
+      const lines = bodyMenu(longBody, 24).render(width);
+      const tokens = detailTokens(lines, width);
       expect(containsTokenRun(tokens, firstTokens)).toBe(true);
-      expect(containsTokenRun(tokens, lastTokens)).toBe(true);
-      for (const line of bodyMenu(longBody).render(width)) {
+      expect(containsTokenRun(tokens, lastTokens)).toBe(false);
+      expect(lines.length).toBeLessThanOrEqual(24);
+      for (const line of lines) {
         expect(renderedWidth(line)).toBeLessThanOrEqual(width);
       }
     }
+  });
+});
+
+describe("StyleMenu height budget and scrolling", () => {
+  const longBody = Array.from(
+    { length: 210 },
+    (_, index) => `Line ${index} of the long instructions body with several words to wrap.`,
+  ).join("\n");
+  const firstTokens = longBody.split("\n")[0]!.split(/\s+/);
+  const lastTokens = longBody.split("\n")[209]!.split(/\s+/);
+
+  function longBodyMenu(maxHeight: number): StyleMenu {
+    return bodyMenu(longBody, maxHeight);
+  }
+
+  function wheelEvent(wheelDelta: number): TuiMouseEvent {
+    return {
+      type: "wheel",
+      button: "none",
+      x: 5,
+      y: 5,
+      screenX: 5,
+      screenY: 5,
+      width: 80,
+      height: 24,
+      shift: false,
+      alt: false,
+      ctrl: false,
+      wheelDelta,
+    };
+  }
+
+  it.each([24, 40])("keeps the status line, footer and borders on screen within %i rows", (budget) => {
+    const lines = longBodyMenu(budget).render(80);
+    const output = lines.join("\n");
+
+    expect(output).toContain("turn reminder:");
+    expect(output).toContain("keep-coding: on");
+    expect(output).toContain("↑↓ · Enter · Esc");
+    expect(lines.length).toBeLessThanOrEqual(budget);
+  });
+
+  it.each([24, 40])(
+    "reaches the tail of a 210-line body and comes back with PageDown/PageUp in %i rows",
+    (budget) => {
+      const menu = longBodyMenu(budget);
+      const width = 80;
+
+      const initial = detailTokens(menu.render(width), width);
+      expect(containsTokenRun(initial, firstTokens)).toBe(true);
+      expect(containsTokenRun(initial, lastTokens)).toBe(false);
+
+      let pages = 0;
+      while (!containsTokenRun(detailTokens(menu.render(width), width), lastTokens) && pages < 100) {
+        menu.handleInput("\x1b[6~");
+        pages += 1;
+      }
+      const atEnd = menu.render(width);
+      expect(containsTokenRun(detailTokens(atEnd, width), lastTokens)).toBe(true);
+      expect(containsTokenRun(detailTokens(atEnd, width), firstTokens)).toBe(false);
+      expect(atEnd.join("\n")).toContain("turn reminder:");
+      expect(atEnd.length).toBeLessThanOrEqual(budget);
+
+      let returns = 0;
+      while (!containsTokenRun(detailTokens(menu.render(width), width), firstTokens) && returns < 100) {
+        menu.handleInput("\x1b[5~");
+        returns += 1;
+      }
+      const backAtTop = menu.render(width);
+      expect(containsTokenRun(detailTokens(backAtTop, width), firstTokens)).toBe(true);
+      expect(backAtTop.length).toBeLessThanOrEqual(budget);
+    },
+  );
+
+  it("jumps to the end and back of the body with End and Home", () => {
+    const menu = longBodyMenu(24);
+    const width = 80;
+    menu.render(width); // The overlay paints before any key reaches the menu.
+
+    menu.handleInput("\x1b[F");
+    const atEnd = menu.render(width);
+    expect(containsTokenRun(detailTokens(atEnd, width), lastTokens)).toBe(true);
+    expect(atEnd.join("\n")).toContain("turn reminder:");
+
+    menu.handleInput("\x1b[H");
+    expect(containsTokenRun(detailTokens(menu.render(width), width), firstTokens)).toBe(true);
+  });
+
+  it("documents the body scroll keys in the footer next to the base keys", () => {
+    const expanded = longBodyMenu(24).render(80).join("\n");
+    expect(expanded).toContain("↑↓ · Enter · Esc");
+    expect(expanded).toContain("PgUp/PgDn");
+    expect(expanded).toContain("Home/End");
+
+    const collapsed = longBodyMenu(24).render(79).join("\n");
+    expect(collapsed).toContain("↑↓ · Enter · Esc");
+    expect(collapsed).not.toContain("PgUp/PgDn");
+  });
+
+  it.each([
+    [79, 24],
+    [79, 40],
+    [40, 24],
+    [40, 40],
+  ])("fits the collapsed layout at width %i within %i rows", (width, budget) => {
+    const lines = longBodyMenu(budget).render(width);
+
+    expect(lines.length).toBeLessThanOrEqual(budget);
+    expect(lines.join("\n")).toContain("↑↓ · Enter · Esc");
+    expect(lines.join("\n")).not.toContain("turn reminder");
+    for (const line of lines) {
+      expect(renderedWidth(line)).toBeLessThanOrEqual(width);
+    }
+  });
+
+  it("consumes wheel events over the menu and scrolls the body", () => {
+    const menu = longBodyMenu(24);
+    const width = 80;
+    menu.render(width);
+
+    expect(menu.handleMouse(wheelEvent(3))).toEqual({ handled: true });
+    expect(containsTokenRun(detailTokens(menu.render(width), width), firstTokens)).toBe(false);
+
+    let rolls = 0;
+    while (!containsTokenRun(detailTokens(menu.render(width), width), lastTokens) && rolls < 500) {
+      menu.handleMouse(wheelEvent(3));
+      rolls += 1;
+    }
+    const atEnd = menu.render(width);
+    expect(containsTokenRun(detailTokens(atEnd, width), lastTokens)).toBe(true);
+    expect(atEnd.join("\n")).toContain("turn reminder:");
+    expect(atEnd.length).toBeLessThanOrEqual(24);
+
+    let rollsBack = 0;
+    while (!containsTokenRun(detailTokens(menu.render(width), width), firstTokens) && rollsBack < 500) {
+      menu.handleMouse(wheelEvent(-3));
+      rollsBack += 1;
+    }
+    expect(containsTokenRun(detailTokens(menu.render(width), width), firstTokens)).toBe(true);
+  });
+
+  it("returns no result for non-wheel mouse events", () => {
+    const menu = longBodyMenu(24);
+    menu.render(80);
+
+    expect(
+      menu.handleMouse({
+        ...wheelEvent(0),
+        type: "press",
+        button: "left",
+        wheelDelta: undefined,
+      }),
+    ).toBeUndefined();
+  });
+
+  it("leaves the list selection untouched on scroll keys", () => {
+    const menu = longBodyMenu(24);
+
+    menu.handleInput("\x1b[6~");
+    menu.handleInput("\x1b[F");
+
+    expect(menu.render(80).join("\n")).toContain("* Body Style user");
+  });
+
+  it("starts the next style's body from the top after scrolling and moving the cursor", () => {
+    const alphaBody = Array.from(
+      { length: 210 },
+      (_, index) => `Alpha line ${index} with several words to wrap across the body.`,
+    ).join("\n");
+    const betaBody = Array.from(
+      { length: 210 },
+      (_, index) => `Beta line ${index} with several words to wrap across the body.`,
+    ).join("\n");
+    const registry = mergeStyleSources(
+      createBuiltinRegistry(),
+      [
+        customStyle({ id: "alpha-body", name: "Alpha Body", instructions: alphaBody }),
+        customStyle({ id: "beta-body", name: "Beta Body", instructions: betaBody }),
+      ],
+      [],
+    ).registry;
+    const menu = createMenu(registry, { activeStyleId: "alpha-body", maxHeight: () => 24 });
+    const width = 80;
+    menu.render(width); // The overlay paints before any key reaches the menu.
+
+    menu.handleInput("\x1b[F");
+    const alphaTokens = detailTokens(menu.render(width), width);
+    expect(containsTokenRun(alphaTokens, "Alpha line 209 with several words to wrap across the body.".split(/\s+/))).toBe(true);
+
+    menu.handleInput("\x1b[B");
+    const betaTokens = detailTokens(menu.render(width), width);
+    expect(containsTokenRun(betaTokens, "Beta line 0 with several words to wrap across the body.".split(/\s+/))).toBe(true);
+    expect(containsTokenRun(betaTokens, "Beta line 209 with several words to wrap across the body.".split(/\s+/))).toBe(false);
   });
 });

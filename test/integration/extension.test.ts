@@ -310,7 +310,7 @@ describe("forced style in the menu", () => {
       keybindings: unknown,
       done: (result: string | null) => void,
     ) => { render(width: number): string[] }) => {
-      const component = factory({ requestRender: vi.fn() }, {
+      const component = factory({ requestRender: vi.fn(), terminal: { rows: 40 } }, {
         fg: (color: string, text: string) => `[${color}]${text}[/]`,
       }, {}, () => null);
       rendered = component.render(120).join("\n");

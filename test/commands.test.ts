@@ -132,7 +132,7 @@ interface MenuComponent {
 }
 
 type MenuFactory = (
-  tui: { requestRender: ReturnType<typeof vi.fn> },
+  tui: { requestRender: ReturnType<typeof vi.fn>; terminal: { rows: number } },
   theme: StyleMenuTheme,
   keybindings: unknown,
   done: (result: string | null) => void,
@@ -166,6 +166,30 @@ describe("/output-style menu guards", () => {
     expect(notify).not.toHaveBeenCalled();
   });
 
+  it("opens the menu as an overlay bounded to the terminal height", async () => {
+    const { command } = registerCommand();
+    const custom = vi.fn(
+      (
+        factory: MenuFactory,
+        options: { overlay?: boolean; overlayOptions?: () => { maxHeight?: number } },
+      ) => {
+        // The real overlay path runs the factory before resolving overlayOptions.
+        factory({ requestRender: vi.fn(), terminal: { rows: 40 } }, fakeTheme(), {}, () => null);
+        return options;
+      },
+    );
+    const { context } = menuContext("tui", custom);
+
+    await command.handler("", context);
+
+    const options = custom.mock.results[0]?.value as {
+      overlay?: boolean;
+      overlayOptions?: () => { maxHeight?: number };
+    };
+    expect(options.overlay).toBe(true);
+    expect(options.overlayOptions?.()).toEqual({ maxHeight: 40 });
+  });
+
   it.each(["rpc", "print", "json"])("keeps the text listing in %s mode", async (mode) => {
     const { command } = registerCommand();
     const { context, custom, notify } = menuContext(mode);
@@ -195,7 +219,7 @@ describe("/output-style menu guards", () => {
     const custom = vi.fn(
       (factory: MenuFactory) =>
         new Promise<string | null>((resolve) => {
-          const component = factory({ requestRender: vi.fn() }, fakeTheme(), {}, resolve);
+          const component = factory({ requestRender: vi.fn(), terminal: { rows: 40 } }, fakeTheme(), {}, resolve);
           component.handleInput("\x1b[B");
           component.handleInput("\x1b[B");
           component.handleInput("\r");
@@ -220,7 +244,7 @@ describe("/output-style menu guards", () => {
     const custom = vi.fn(
       (factory: MenuFactory) =>
         new Promise<string | null>((resolve) => {
-          const component = factory({ requestRender: vi.fn() }, fakeTheme(), {}, resolve);
+          const component = factory({ requestRender: vi.fn(), terminal: { rows: 40 } }, fakeTheme(), {}, resolve);
           component.handleInput("\x1b");
         }),
     );
@@ -250,7 +274,7 @@ describe("/output-style menu guards", () => {
     state.setSelected("ghost");
     let rendered = "";
     const custom = vi.fn(async (factory: MenuFactory) => {
-      const component = factory({ requestRender: vi.fn() }, fakeTheme(), {}, () => null);
+      const component = factory({ requestRender: vi.fn(), terminal: { rows: 40 } }, fakeTheme(), {}, () => null);
       rendered = component.render(120).join("\n");
       return null;
     });
@@ -268,7 +292,7 @@ describe("/output-style menu guards", () => {
     const { command } = registerCommand(undefined, () => controller.activeForce());
     let rendered = "";
     const custom = vi.fn(async (factory: MenuFactory) => {
-      const component = factory({ requestRender: vi.fn() }, fakeTheme(), {}, () => null);
+      const component = factory({ requestRender: vi.fn(), terminal: { rows: 40 } }, fakeTheme(), {}, () => null);
       rendered = component.render(120).join("\n");
       return null;
     });

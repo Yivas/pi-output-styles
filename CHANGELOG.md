@@ -7,6 +7,7 @@ All notable changes to `pi-output-styles` are documented here.
 ### Added
 
 - `/output-style` with no arguments now opens an interactive menu in TUI sessions: a navigable style list (active marker and origin) beside a live detail panel with the description and the style's real metadata (`turn reminder`, `keep-coding`, `waiting reminder: unavailable (Pi)` when Pi cannot deliver it, and `from <path>` for custom styles). Enter applies and persists the selection; Esc cancels.
+- The detail panel includes the instruction body with real scrolling: the menu fits the terminal height — borders, banner, list, detail and footer share one row budget, so the status line stays on screen — and the body scrolls with the mouse wheel and with `PgUp`/`PgDn`/`Home`/`End`, listed in the menu footer next to `↑↓ · Enter · Esc`.
 - A `style: <name>` indicator in the status bar follows the effective style: muted for `default`, accent otherwise, painted at session start and after every selection change.
 - While another plugin forces a style, the menu shows `Forced by <plugin> — selection overridden` with every row muted and Enter disabled until the force is released.
 - Below 80 columns the detail panel collapses and the active row carries its description inline.
@@ -17,7 +18,7 @@ All notable changes to `pi-output-styles` are documented here.
 
 ### Known limitations
 
-- The detail panel shows the description and metadata; the scrollable instruction body is not included yet.
+- Mouse-wheel scrolling follows Pi's input routing: the wheel reaches the menu in Pi's fullscreen TUI mode (`tuiMode: "fullscreen"`); in the default regular mode the terminal keeps the wheel for its scrollback, so the footer keys are the portable scroll path.
 - The status-bar entry is painted with the theme current at write time and repainted on session start and selection changes, not when the theme changes.
 - Rendering inside a full Pi TUI session (menu in context and the indicator inside the footer) awaits the visual checkpoint; the component renders were captured through Pi's own theme and overlay path.
 
