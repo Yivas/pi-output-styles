@@ -4,7 +4,7 @@ All notable changes to `pi-output-styles` are documented here.
 
 ## Unreleased
 
-## [0.4.0] - 2026-09-23
+## [0.4.0] - 2026-09-24
 
 ### Added
 
