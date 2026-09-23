@@ -1,5 +1,5 @@
 import { DynamicBorder } from "@earendil-works/pi-coding-agent";
-import { Box, HStack, Key, Text, TruncatedText, VStack, matchesKey } from "@earendil-works/pi-tui";
+import { Box, HStack, Key, ScrollView, Text, TruncatedText, VStack, matchesKey, wrapTextWithAnsi } from "@earendil-works/pi-tui";
 import type { Component } from "@earendil-works/pi-tui";
 import type { StyleDefinition, StyleRegistry } from "../styles/types.js";
 
@@ -10,6 +10,11 @@ const ZONE_GAP = 2;
 const LIST_ZONE_RATIO = 0.4;
 
 export type StyleMenuColor = "accent" | "border" | "dim" | "muted" | "text" | "warning";
+
+/** First rendered column of the detail zone in the two-zone layout. */
+export function detailZoneStart(width: number): number {
+  return Math.ceil(width * LIST_ZONE_RATIO) + ZONE_GAP;
+}
 
 /** Structural subset of Pi's Theme used by the menu; the real theme is injected by the custom() callback. */
 export interface StyleMenuTheme {
@@ -100,9 +105,10 @@ export class StyleMenu {
     if (collapsed) {
       return new VStack(rows);
     }
-    const listWidth = Math.ceil(width * LIST_ZONE_RATIO);
-    const detailWidth = width - listWidth - ZONE_GAP;
-    const detail = new VStack(this.detailComponents());
+    const detailStart = detailZoneStart(width);
+    const listWidth = detailStart - ZONE_GAP;
+    const detailWidth = width - detailStart;
+    const detail = new VStack(this.detailComponents(detailWidth));
     return new HStack(
       [
         { component: new VStack(rows), basis: listWidth },
@@ -124,10 +130,15 @@ export class StyleMenu {
     });
   }
 
-  private detailComponents(): Component[] {
+  private detailComponents(detailWidth: number): Component[] {
     const style = this.styles[this.selectedIndex];
+    // The body is pre-wrapped to the detail column so its lines are fixed to the
+    // panel width; Text re-wraps identically at render and pads for the HStack
+    // composite. The ScrollView gives the body its own wheel-driven viewport.
+    const body = wrapTextWithAnsi(style.instructions, detailWidth).join("\n");
     return [
       new Text(style.description, 0, 0),
+      new ScrollView(new Text(body, 0, 0)),
       new Text(this.options.theme.fg("dim", this.statusText(style)), 0, 0),
     ];
   }

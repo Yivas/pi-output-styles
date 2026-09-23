@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import { visibleWidth } from "@earendil-works/pi-tui";
-import { StyleMenu, type StyleMenuForce, type StyleMenuTheme } from "../../src/ui/style-menu.js";
+import { sliceByColumn, stripTerminalSequences, visibleWidth } from "@earendil-works/pi-tui";
+import {
+  StyleMenu,
+  detailZoneStart,
+  type StyleMenuForce,
+  type StyleMenuTheme,
+} from "../../src/ui/style-menu.js";
 import type { StyleDefinition, StyleRegistry } from "../../src/styles/types.js";
 import { createBuiltinRegistry } from "../../src/styles/registry.js";
 import { ForcedStyleController } from "../../src/styles/forced.js";
@@ -16,6 +21,28 @@ function fakeTheme(): StyleMenuTheme {
 // colors are zero-width ANSI, so the tags are removed before measuring render width.
 function renderedWidth(line: string): number {
   return visibleWidth(line.replace(/\[(?:accent|border|dim|muted|text|warning)\]|\[\/\]/g, ""));
+}
+
+// Detail-zone text with terminal sequences and theme tags removed, split into
+// tokens, so wrapped body fragments can be matched back against the source
+// instructions verbatim. Only the detail column is taken: the list zone shares
+// the same rendered rows.
+function detailTokens(lines: string[], width: number): string[] {
+  const start = detailZoneStart(width);
+  const detail = lines.map((line) => sliceByColumn(line, start, width - start)).join("\n");
+  return stripTerminalSequences(detail)
+    .replace(/\[(?:accent|border|dim|muted|text|warning)\]|\[\/\]/g, "")
+    .split(/\s+/)
+    .filter((token) => token.length > 0);
+}
+
+function containsTokenRun(tokens: string[], run: string[]): boolean {
+  for (let start = 0; start + run.length <= tokens.length; start += 1) {
+    if (run.every((token, offset) => tokens[start + offset] === token)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function customStyle(overrides: Partial<StyleDefinition>): StyleDefinition {
@@ -320,5 +347,80 @@ describe("StyleMenu keyboard", () => {
 
     expect(done).not.toHaveBeenCalled();
     expect(requestRender).not.toHaveBeenCalled();
+  });
+});
+
+describe("StyleMenu instructions body", () => {
+  const leadLine =
+    "Lead body line long enough to wrap into several fragments inside the narrow detail column at every supported width.";
+  const wideLine = "日本語 の 説明 行 を 含み ます 。";
+  const instructionsFixture = [leadLine, wideLine, "Final short body line."].join("\n");
+
+  function bodyMenu(instructions: string): StyleMenu {
+    const registry = mergeStyleSources(
+      createBuiltinRegistry(),
+      [customStyle({ id: "body-style", name: "Body Style", instructions })],
+      [],
+    ).registry;
+    return createMenu(registry, { activeStyleId: "body-style" });
+  }
+
+  it("shows the complete wrapped body, including wide characters, at 80 and 120 columns", () => {
+    const bodyTokens = instructionsFixture.split(/\s+/);
+
+    for (const width of [80, 120]) {
+      const lines = bodyMenu(instructionsFixture).render(width);
+      const output = lines.join("\n");
+
+      expect(containsTokenRun(detailTokens(lines, width), bodyTokens)).toBe(true);
+      expect(output).toContain("日本語");
+      // The lead line is wider than the detail column, so it must arrive wrapped.
+      expect(output).not.toContain(leadLine);
+      for (const line of lines) {
+        expect(renderedWidth(line)).toBeLessThanOrEqual(width);
+      }
+    }
+  });
+
+  it("keeps other styles' bodies out of the detail while navigating", () => {
+    const menu = createMenu(createBuiltinRegistry(), { activeStyleId: "concise" });
+    const first = menu.render(120).join("\n");
+    expect(first).toContain("Never trade correctness for brevity");
+    expect(first).not.toContain("Add one insight block before writing code");
+
+    menu.handleInput("\x1b[B");
+
+    const moved = menu.render(120).join("\n");
+    expect(moved).toContain("Add one insight block before writing code");
+    expect(moved).not.toContain("Never trade correctness for brevity");
+  });
+
+  it("drops the body below 80 columns and keeps the description in the row", () => {
+    const lines = createMenu(createBuiltinRegistry(), { activeStyleId: "concise" }).render(79);
+    const output = lines.join("\n");
+
+    expect(output).toContain("Answer with the result first, without preamble or narration.");
+    expect(output).not.toContain("Never trade correctness for brevity");
+    for (const line of lines) {
+      expect(renderedWidth(line)).toBeLessThanOrEqual(79);
+    }
+  });
+
+  it("keeps a 200+ line body complete and within width at 80 and 120 columns", () => {
+    const longBody = Array.from(
+      { length: 210 },
+      (_, index) => `Line ${index} of the long instructions body with several words to wrap.`,
+    ).join("\n");
+    const firstTokens = longBody.split("\n")[0]!.split(/\s+/);
+    const lastTokens = longBody.split("\n")[209]!.split(/\s+/);
+
+    for (const width of [80, 120]) {
+      const tokens = detailTokens(bodyMenu(longBody).render(width), width);
+      expect(containsTokenRun(tokens, firstTokens)).toBe(true);
+      expect(containsTokenRun(tokens, lastTokens)).toBe(true);
+      for (const line of bodyMenu(longBody).render(width)) {
+        expect(renderedWidth(line)).toBeLessThanOrEqual(width);
+      }
+    }
   });
 });
