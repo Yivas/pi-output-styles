@@ -1,6 +1,7 @@
 import { execFile as execFileCallback } from "node:child_process";
 import { mkdir, readFile, rm, utimes, writeFile } from "node:fs/promises";
 import { mkdtemp } from "node:fs/promises";
+import { createRequire } from "node:module";
 import { promisify } from "node:util";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -129,8 +130,10 @@ describe("selection persistence", () => {
         `await createSelectionStore(process.argv[2], { validStyleIds: ["concise"] }).write(process.argv[3]);\n`,
     );
 
+    // Resolve the CLI through the package export; its internal path changed between vite-node releases.
+    const viteNodeCli = createRequire(import.meta.url).resolve("vite-node/cli");
     const child = execFile(process.execPath, [
-      join(process.cwd(), "node_modules/vite-node/vite-node.mjs"),
+      viteNodeCli,
       "--script",
       scriptPath,
       agentDirectory,

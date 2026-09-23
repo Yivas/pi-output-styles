@@ -80,7 +80,7 @@ describe("extension factory", () => {
       systemPrompt: "Native instructions",
     }, {});
     expect(initial).toEqual({
-      systemPrompt: expect.stringContaining("## Coding instructions"),
+      systemPrompt: "Native instructions",
     });
 
     await firstCommand?.handler("Concise", commandContext());
@@ -180,7 +180,7 @@ describe("extension factory", () => {
       systemPrompt: "Native instructions",
     }, {});
     expect(beforeWrite).toEqual({
-      systemPrompt: expect.stringContaining("## Coding instructions"),
+      systemPrompt: "Native instructions",
     });
 
     const command = extensionApi.commands.get("output-style");
@@ -191,7 +191,7 @@ describe("extension factory", () => {
       systemPrompt: "Native instructions",
     }, {});
     expect(afterWrite).toEqual({
-      systemPrompt: expect.stringContaining("## Coding instructions"),
+      systemPrompt: "Native instructions",
     });
   });
 });

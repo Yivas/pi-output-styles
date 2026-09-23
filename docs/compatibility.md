@@ -6,7 +6,7 @@ The compatibility statements in this document are limited to the Pi installation
 
 - Pi package: local dependency `@earendil-works/pi-coding-agent` `0.87.0` (the API probe pins `PI_PACKAGE_DIR` to this dependency so an unrelated global Pi installation cannot change the observed version)
 - Node.js: the local Node.js `v24.9.0` installation used for the checks
-- Package status: `pi-response-styles` `0.1.0` published on npm and GitHub Releases; compatibility verified against Pi `0.87.0` only; `waitingTurnReminder` blocked (FAIL-CLOSED); cross-plugin force interoperability not-run
+- Package status: `pi-response-styles` `0.1.0` published on GitHub Releases as `v0.1.0`; no npm publication until `0.2.0`; compatibility verified against Pi `0.87.0` only; `waitingTurnReminder` blocked (FAIL-CLOSED); cross-plugin force interoperability not-run
 
 ## Observed extension API
 

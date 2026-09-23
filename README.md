@@ -32,11 +32,7 @@ The extension is executable and covered by the repository's local checks. The ve
 
 ## Installation
 
-The package is published on npm as `pi-response-styles`; the repository and product keep the name `pi-output-styles`.
-
-```bash
-npm install pi-response-styles
-```
+The npm package `pi-response-styles` has no published version until `0.2.0`; the repository and product keep the name `pi-output-styles`. The current release is the GitHub release `v0.1.0`.
 
 ## Security and privacy
 

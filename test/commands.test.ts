@@ -60,7 +60,12 @@ describe("/output-style", () => {
     expect(notify).toHaveBeenCalledOnce();
     expect(notify.mock.calls[0]?.[0]).toContain("Active: default");
     expect(notify.mock.calls[0]?.[0]).toContain("Concise");
-    expect(notify.mock.calls[0]?.[0]).not.toContain("Put the result first. Use compact wording");
+    const listing = notify.mock.calls[0]?.[0] as string;
+    for (const style of createBuiltinRegistry().list()) {
+      if (style.instructions) {
+        expect(listing).not.toContain(style.instructions);
+      }
+    }
   });
 
   it("reports status and changes the active style for later turns", async () => {

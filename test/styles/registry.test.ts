@@ -22,14 +22,14 @@ describe("builtin style registry", () => {
     ]);
   });
 
-  it("enables coding instructions for every built-in", () => {
+  it("enables coding instructions only for the four non-default built-ins", () => {
     const registry = createBuiltinRegistry();
 
     expect(registry.list().map(({ id, keepCodingInstructions }) => ({
       id,
       keepCodingInstructions,
     }))).toEqual([
-      { id: "default", keepCodingInstructions: true },
+      { id: "default", keepCodingInstructions: false },
       { id: "proactive", keepCodingInstructions: true },
       { id: "concise", keepCodingInstructions: true },
       { id: "explanatory", keepCodingInstructions: true },
@@ -41,10 +41,9 @@ describe("builtin style registry", () => {
     const registry = createBuiltinRegistry();
 
     expect(registry.resolve("default")).toMatchObject({ id: "default", instructions: "" });
-    expect(registry.resolve("proactive")?.instructions).toContain("initiative");
-    expect(registry.resolve("concise")?.instructions).toContain("compact");
-    expect(registry.resolve("explanatory")?.instructions).toContain("decisions");
-    expect(registry.resolve("learning")?.instructions).toContain("small");
+    for (const styleId of ["proactive", "concise", "explanatory", "learning"]) {
+      expect(registry.resolve(styleId)?.instructions.length).toBeGreaterThan(0);
+    }
   });
 
   it("uses default when no style is selected", () => {

@@ -7,7 +7,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        This repository contains executable extension code, published as the npm package `pi-response-styles` version `0.1.0` and as the GitHub release `v0.1.0`. State the released version or the local commit you tested.
+        This repository contains executable extension code, published as the GitHub release `v0.1.0`; the npm package `pi-response-styles` has no published version until `0.2.0`. State the released version or the local commit you tested.
 
         Do not include credentials, tokens, private prompts, personal or repository identifiers, private configuration, or unredacted logs. For a vulnerability or other security-sensitive report, use [SECURITY.md](https://github.com/yivas/pi-output-styles/blob/master/SECURITY.md) and the [private security advisory channel](https://github.com/yivas/pi-output-styles/security/advisories/new) instead of this form.
 

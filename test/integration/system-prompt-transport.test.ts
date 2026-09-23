@@ -113,11 +113,12 @@ export default function (pi) {
     const capturedPayload = transport.read();
     const capturedJson = JSON.stringify(capturedPayload);
     const styleInstructions = style.instructions;
+    const serializedInstructions = JSON.stringify(styleInstructions).slice(1, -1);
 
     expect(runner.createContext().getSystemPrompt()).toBe(currentSystemPrompt);
     expect(capturedPayload.messages[0]?.content).toContain("native instructions");
     expect(capturedPayload.messages[0]?.content).toContain(styleInstructions);
-    expect(capturedJson.split(styleInstructions).length - 1).toBe(1);
+    expect(capturedJson.split(serializedInstructions).length - 1).toBe(1);
     expect(capturedJson.split("native instructions").length - 1).toBe(1);
   });
 

@@ -13,6 +13,7 @@ import {
 } from "../src/prompt.js";
 import { BASE_CODING_INSTRUCTIONS } from "../src/styles/coding-instructions.js";
 import { parseStyleFile } from "../src/styles/parser.js";
+import { createBuiltinRegistry } from "../src/styles/registry.js";
 import type { StyleDefinition } from "../src/styles/types.js";
 
 const fixturesDirectory = fileURLToPath(new URL("fixtures/styles/", import.meta.url));
@@ -26,7 +27,7 @@ const defaultStyle: StyleDefinition = {
   id: "default",
   name: "default",
   description: "Normal response behavior.",
-  keepCodingInstructions: true,
+  keepCodingInstructions: false,
   instructions: "",
   source: "builtin",
 };
@@ -57,6 +58,19 @@ describe("appendStyleInstructions", () => {
 });
 
 describe("composeStylePrompt", () => {
+  it("leaves the system prompt untouched for the built-in default style", () => {
+    const builtinDefault = createBuiltinRegistry().resolve("default");
+    if (!builtinDefault) {
+      throw new Error("The default built-in style is missing");
+    }
+    const prompt = "Native instructions\n\nEarlier extension instructions";
+    const composed = composeStylePrompt(prompt, builtinDefault, BASE_CODING_INSTRUCTIONS);
+
+    expect(composed).toBe(prompt);
+    expect(composed).not.toContain(BASE_CODING_INSTRUCTIONS);
+    expect(composed).not.toContain("## Output style:");
+  });
+
   it("keeps the base coding block and adds the style body once when enabled", async () => {
     const style = await readStyleFixture("keep-coding-true.md");
     const prompt = "Native instructions\n\nEarlier extension instructions";

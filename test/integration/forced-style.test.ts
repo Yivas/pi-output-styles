@@ -31,7 +31,7 @@ describe("forced style prompt integration", () => {
     const beforeAgentStart = api.getPrompt();
     expect(beforeAgentStart).toBeDefined();
     const normal = beforeAgentStart?.({ systemPrompt: "Native instructions" }, {});
-    expect(normal).toEqual({ systemPrompt: expect.stringContaining("## Coding instructions") });
+    expect(normal).toEqual({ systemPrompt: "Native instructions" });
 
     const force = controller.force("plugin-a", "concise");
     const forced = beforeAgentStart?.({ systemPrompt: "Native instructions" }, {});
@@ -39,7 +39,7 @@ describe("forced style prompt integration", () => {
 
     force.release();
     const restored = beforeAgentStart?.({ systemPrompt: "Native instructions" }, {});
-    expect(restored).toEqual({ systemPrompt: expect.stringContaining("## Coding instructions") });
+    expect(restored).toEqual({ systemPrompt: "Native instructions" });
     expect(warning).not.toHaveBeenCalled();
   });
 });
