@@ -1,4 +1,4 @@
-`pi-output-styles` is open source collaborative software. The repository contains an executable extension, published as release `v0.5.0` on GitHub and as the npm package `pi-response-styles` version `0.5.0`. The verified Pi compatibility baseline is `0.87.0`; other Pi versions have not been run.
+`pi-output-styles` is open source collaborative software. The repository contains an executable extension, published as release `v0.5.1` on GitHub and as the npm package `pi-response-styles` version `0.5.1`. The verified Pi compatibility baseline is `0.87.0`; other Pi versions have not been run.
 
 ## What we accept
 
