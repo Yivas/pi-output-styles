@@ -4,6 +4,10 @@ All notable changes to `pi-output-styles` are documented here.
 
 ## Unreleased
 
+### Fixed
+
+- The compatibility document now describes the style menu as the native dialog slot delivered in `0.5.2`, replacing the overlay implementation it superseded, and records the small-terminal row-cap behaviour.
+
 ## [0.5.2] - 2026-09-24
 
 ### Changed
