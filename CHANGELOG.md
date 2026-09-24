@@ -4,6 +4,8 @@ All notable changes to `pi-output-styles` are documented here.
 
 ## Unreleased
 
+## [0.5.2] - 2026-09-24
+
 ### Changed
 
 - The `/output-style` menu now opens as a native dialog in the editor slot — the same place as Pi's own dialogs like the model picker — instead of a floating overlay, and it sizes to its content. Layout, keyboard, states, scrolling and the status indicator are unchanged.
