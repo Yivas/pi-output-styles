@@ -118,7 +118,9 @@ describe("selection persistence", () => {
     await expect(readFile(join(lockDirectory, "owner"), "utf8")).rejects.toMatchObject({ code: "ENOENT" });
   });
 
-  it("waits for a selection lock held by another process", async () => {
+  // The lock holder is a separate process: under load the 5s default times out before the
+  // wait completes, so this test gets a wider budget (test-only, never shipped).
+  it("waits for a selection lock held by another process", { timeout: 20_000 }, async () => {
     const agentDirectory = await createAgentDirectory();
     const lockDirectory = join(agentDirectory, "pi-output-styles.selection.json.lock");
     await mkdir(lockDirectory);

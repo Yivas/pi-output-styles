@@ -59,14 +59,14 @@ Alongside the task, offer educational ideas about the code: why a decision holds
 
 ### Insights
 
-Add one insight block before writing code and again after writing code. In a turn where you write no code — a review, an analysis, an answer — close with a single insight block about what you found, decided, or would change. Keep the format identical every time: a box drawn with the star, the Insight title and a rule line, with 2-3 key points between the opening and the closing rule.
+Add one insight block before writing code and again after writing code. Keep the format identical every time: a box drawn with the star, the Insight title and a rule line, with 2-3 key points between the opening and the closing rule.
 
 \`★ Insight ─────────────────────────────────────\`
 - first key point
 - second key point
 \`─────────────────────────────────────────────────\`
 
-Every block stays in the conversation and is never written into the code. Keep each point anchored to this project's code or to the work of this turn, not to programming in general.
+Every block stays in the conversation and is never written into the code. Keep each point anchored to this project's code or to what you just wrote, not to programming in general.
 `.trim(),
     source: "builtin",
   },

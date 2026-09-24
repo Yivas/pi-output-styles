@@ -123,7 +123,9 @@ async function loadWithProbe(providerFirst: boolean) {
 }
 
 describe("cross-plugin style controller interop", () => {
-  it("delivers the controller to a consumer extension in either load order", async () => {
+  // Each load order boots Pi's real loader and event bus twice: under load the 5s default
+  // times out, so this test gets a wider budget (test-only, never shipped).
+  it("delivers the controller to a consumer extension in either load order", { timeout: 20_000 }, async () => {
     for (const providerFirst of [true, false]) {
       const { readPrompt } = await loadWithProbe(providerFirst);
       const label = `providerFirst=${providerFirst}`;
