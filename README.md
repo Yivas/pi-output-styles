@@ -16,7 +16,7 @@ The extension decides which style instructions to apply. It does not change the 
 
 The repository currently includes:
 
-- Five built-in styles: `default`, `Proactive`, `Concise`, `Explanatory`, and `Learning`.
+- Ten built-in styles: `default`, `Proactive`, `Concise`, `Explanatory`, `Learning`, `Reviewer`, `Diagrams first`, `STE`, `Caveman`, and `ELI5`.
 - The `/output-style` command for listing styles, showing status, and selecting a style.
 - Injection of the active style into Pi's chained system prompt.
 - Persistence of the selected style in the extension-owned `<agentDir>/pi-output-styles.selection.json` file.
@@ -43,6 +43,15 @@ The extension does not collect telemetry or open network connections. User and p
 ## Documentation, support, and contribution
 
 The implementation details and verified compatibility limits are documented in [docs/compatibility.md](docs/compatibility.md). Issues and pull requests are welcome through the repository's public channels. For questions or non-security problems, use the project's [issue tracker](https://github.com/yivas/pi-output-styles/issues). Security reports must follow [SECURITY.md](SECURITY.md).
+
+## Credits
+
+Some built-in styles adapt ideas from published work; every style text in this repository is written from scratch:
+
+- `Caveman` follows the Caveman output style by Carlos Mello (MIT).
+- `STE` implements ASD-STE100 Simplified Technical English (<https://asd-ste100.org>).
+- `ELI5` is inspired by Lydia Hallie's ELI5 style.
+- `Reviewer` and `Diagrams first` adapt the semantics of styles by LoneExile (MIT).
 
 This is open source collaborative software under the MIT License.
 

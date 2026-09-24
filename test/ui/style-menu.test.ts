@@ -332,7 +332,9 @@ describe("StyleMenu keyboard", () => {
     for (let step = 0; step < 10; step += 1) {
       menu.handleInput("\x1b[B");
     }
-    expect(menu.render(120).join("\n")).toContain("Stop and ask the human to write small pieces of code");
+    const atBottom = menu.render(120).join("\n");
+    expect(atBottom).toContain("[accent]  ELI5 built-in[/]");
+    expect(atBottom).toContain("Plain short words for a tired reader");
 
     for (let step = 0; step < 10; step += 1) {
       menu.handleInput("\x1b[A");

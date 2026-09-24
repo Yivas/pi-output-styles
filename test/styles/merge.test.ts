@@ -43,6 +43,11 @@ describe("mergeStyleSources", () => {
       "concise",
       "explanatory",
       "learning",
+      "reviewer",
+      "diagrams-first",
+      "ste",
+      "caveman",
+      "eli5",
       "user-only",
       "project-only",
     ]);

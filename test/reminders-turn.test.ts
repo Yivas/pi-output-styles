@@ -115,8 +115,8 @@ describe("declared built-in reminders", () => {
     return { capabilities, notifications, registeredEvents };
   }
 
-  it("emits the declared Proactive and Concise turn reminders once per event and keeps them out of the prompt", async () => {
-    for (const styleId of ["proactive", "concise"] as const) {
+  it("emits the declared built-in turn reminders once per event and keeps them out of the prompt", async () => {
+    for (const styleId of ["proactive", "concise", "reviewer", "diagrams-first", "ste", "caveman", "eli5"] as const) {
       const style = registry.resolve(styleId);
       if (!style?.turnReminder) {
         throw new Error(`The ${styleId} built-in must declare a turn reminder`);

@@ -1,4 +1,14 @@
-export type BuiltinStyleId = "default" | "proactive" | "concise" | "explanatory" | "learning";
+export type BuiltinStyleId =
+  | "default"
+  | "proactive"
+  | "concise"
+  | "explanatory"
+  | "learning"
+  | "reviewer"
+  | "diagrams-first"
+  | "ste"
+  | "caveman"
+  | "eli5";
 
 export interface StyleDefinition {
   id: string;

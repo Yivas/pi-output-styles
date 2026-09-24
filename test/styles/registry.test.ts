@@ -3,7 +3,7 @@ import { createBuiltinRegistry, resolveActiveStyle } from "../../src/styles/regi
 import { invalidBuiltinId } from "../fixtures/styles/builtin-invalid-id.test-data.js";
 
 describe("builtin style registry", () => {
-  it("lists the five built-in styles in stable order", () => {
+  it("lists the ten built-in styles in stable order", () => {
     const registry = createBuiltinRegistry();
 
     expect(registry.list().map((style) => style.id)).toEqual([
@@ -12,6 +12,11 @@ describe("builtin style registry", () => {
       "concise",
       "explanatory",
       "learning",
+      "reviewer",
+      "diagrams-first",
+      "ste",
+      "caveman",
+      "eli5",
     ]);
     expect(registry.list().map((style) => style.name)).toEqual([
       "default",
@@ -19,10 +24,15 @@ describe("builtin style registry", () => {
       "Concise",
       "Explanatory",
       "Learning",
+      "Reviewer",
+      "Diagrams first",
+      "STE",
+      "Caveman",
+      "ELI5",
     ]);
   });
 
-  it("enables coding instructions only for the four non-default built-ins", () => {
+  it("enables coding instructions only for the nine non-default built-ins", () => {
     const registry = createBuiltinRegistry();
 
     expect(registry.list().map(({ id, keepCodingInstructions }) => ({
@@ -34,6 +44,11 @@ describe("builtin style registry", () => {
       { id: "concise", keepCodingInstructions: true },
       { id: "explanatory", keepCodingInstructions: true },
       { id: "learning", keepCodingInstructions: true },
+      { id: "reviewer", keepCodingInstructions: true },
+      { id: "diagrams-first", keepCodingInstructions: true },
+      { id: "ste", keepCodingInstructions: true },
+      { id: "caveman", keepCodingInstructions: true },
+      { id: "eli5", keepCodingInstructions: true },
     ]);
   });
 
@@ -41,7 +56,7 @@ describe("builtin style registry", () => {
     const registry = createBuiltinRegistry();
 
     expect(registry.resolve("default")).toMatchObject({ id: "default", instructions: "" });
-    for (const styleId of ["proactive", "concise", "explanatory", "learning"]) {
+    for (const styleId of ["proactive", "concise", "explanatory", "learning", "reviewer", "diagrams-first", "ste", "caveman", "eli5"]) {
       expect(registry.resolve(styleId)?.instructions.length).toBeGreaterThan(0);
     }
   });

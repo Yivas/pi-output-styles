@@ -121,11 +121,107 @@ describe("built-in style parity", () => {
     expect(instructions).toMatch(/\b2-3\b/);
   });
 
-  it("matches the reminder metadata table: only Proactive and Concise declare reminders", () => {
-    expect(styles["proactive"]?.turnReminder).toBeDefined();
+  it("Reviewer has the review lens, six numbered rules and a turn reminder", () => {
+    const style = styles["reviewer"];
+
+    expect(style).toBeDefined();
+    expect(style?.keepCodingInstructions).toBe(true);
+    expect(style?.turnReminder?.trim().length).toBeGreaterThan(0);
+    expect(style?.waitingTurnReminder).toBeUndefined();
+    const instructions = style?.instructions ?? "";
+    expect(instructions).toMatch(/^### Review lens/m);
+    expect(numberedRuleMarkers(instructions)).toEqual(["1.", "2.", "3.", "4.", "5.", "6."]);
+    expect(instructions).toMatch(/edge cases/i);
+    expect(instructions).toMatch(/security/i);
+    expect(instructions).toMatch(/performance/i);
+    expect(instructions).toMatch(/assumptions/i);
+    expect(instructions).toMatch(/what could break/i);
+    expect(instructions).toMatch(/how to verify/i);
+    expect(instructions).toMatch(/no praise/i);
+  });
+
+  it("Diagrams first opens explanations with mermaid and bounded diagrams", () => {
+    const style = styles["diagrams-first"];
+
+    expect(style).toBeDefined();
+    expect(style?.keepCodingInstructions).toBe(true);
+    expect(style?.turnReminder?.trim().length).toBeGreaterThan(0);
+    expect(style?.waitingTurnReminder).toBeUndefined();
+    const instructions = style?.instructions ?? "";
+    expect(instructions).toMatch(/mermaid/i);
+    expect(instructions).toMatch(/flowchart TD/);
+    expect(instructions).toMatch(/sequenceDiagram/);
+    expect(instructions).toMatch(/15 nodes/);
+    expect(instructions).toMatch(/real code/i);
+    expect(instructions).toMatch(/trivial/i);
+  });
+
+  it("STE declares the ASD-STE100 rules, the action-first reply shape and its exceptions", () => {
+    const style = styles["ste"];
+
+    expect(style).toBeDefined();
+    expect(style?.keepCodingInstructions).toBe(true);
+    expect(style?.turnReminder?.trim().length).toBeGreaterThan(0);
+    expect(style?.waitingTurnReminder).toBeUndefined();
+    const instructions = style?.instructions ?? "";
+    expect(instructions).toMatch(/ASD-STE100/);
+    expect(instructions).toMatch(/does not govern code/i);
+    expect(instructions).toMatch(/log output/i);
+    expect(instructions).toMatch(/20 words/);
+    expect(instructions).toMatch(/25 words/);
+    expect(instructions).toMatch(/active voice/i);
+    expect(instructions).toMatch(/no semicolons/i);
+    expect(instructions).toMatch(/no contractions/i);
+    expect(instructions).toMatch(/first line/i);
+    expect(instructions).toMatch(/explanation/i);
+    expect(instructions).toMatch(/destructive/i);
+    expect(instructions).toMatch(/ambiguous/i);
+    expect(instructions).toMatch(/self-check/i);
+  });
+
+  it("Caveman keeps five terse rules with exact technical tokens and safety carve-outs", () => {
+    const style = styles["caveman"];
+
+    expect(style).toBeDefined();
+    expect(style?.keepCodingInstructions).toBe(true);
+    expect(style?.turnReminder?.trim().length).toBeGreaterThan(0);
+    expect(style?.waitingTurnReminder).toBeUndefined();
+    const instructions = style?.instructions ?? "";
+    expect(numberedRuleMarkers(instructions)).toEqual(["1.", "2.", "3.", "4.", "5."]);
+    expect(instructions).toMatch(/fragments/i);
+    expect(instructions).toMatch(/filler/i);
+    expect(instructions).toMatch(/paths/);
+    expect(instructions).toMatch(/stay exact/i);
+    expect(instructions).toMatch(/scanning/i);
+    expect(instructions).toMatch(/irreversible/i);
+    expect(instructions).toMatch(/safety/i);
+  });
+
+  it("ELI5 reports the essentials in plain words and caps decisions at two options", () => {
+    const style = styles["eli5"];
+
+    expect(style).toBeDefined();
+    expect(style?.keepCodingInstructions).toBe(true);
+    expect(style?.turnReminder?.trim().length).toBeGreaterThan(0);
+    expect(style?.waitingTurnReminder).toBeUndefined();
+    const instructions = style?.instructions ?? "";
+    expect(instructions).toMatch(/what you did/i);
+    expect(instructions).toMatch(/whether it worked/i);
+    expect(instructions).toMatch(/what to do now/i);
+    expect(instructions).toMatch(/two options/i);
+    expect(instructions).toMatch(/which one you would take/i);
+    expect(instructions).toMatch(/paths and commands stay exact/i);
+    expect(instructions).toMatch(/never simplify away correctness/i);
+  });
+
+  it("matches the reminder metadata table: seven built-ins declare a turn reminder and only Proactive declares a waiting one", () => {
+    for (const styleId of ["proactive", "concise", "reviewer", "diagrams-first", "ste", "caveman", "eli5"]) {
+      expect(styles[styleId]?.turnReminder).toBeDefined();
+    }
+    for (const styleId of ["concise", "reviewer", "diagrams-first", "ste", "caveman", "eli5"]) {
+      expect(styles[styleId]?.waitingTurnReminder).toBeUndefined();
+    }
     expect(styles["proactive"]?.waitingTurnReminder).toBeDefined();
-    expect(styles["concise"]?.turnReminder).toBeDefined();
-    expect(styles["concise"]?.waitingTurnReminder).toBeUndefined();
     expectNoReminders(styles["default"]);
     expectNoReminders(styles["explanatory"]);
     expectNoReminders(styles["learning"]);
