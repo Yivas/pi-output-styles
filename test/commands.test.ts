@@ -10,6 +10,7 @@ import { registerSystemPromptHook } from "../src/prompt.js";
 import { SelectionState } from "../src/state.js";
 import type { SelectionStore } from "../src/settings.js";
 import { createBuiltinRegistry } from "../src/styles/registry.js";
+import { mergeStyleSources } from "../src/styles/merge.js";
 import { ForcedStyleController } from "../src/styles/forced.js";
 import type { StyleMenuTheme } from "../src/ui/style-menu.js";
 
@@ -247,6 +248,49 @@ describe("/output-style menu guards", () => {
     expect(state.getSelected()).toBe("concise");
     expect(setStatus).toHaveBeenCalledWith("pi-output-styles", "[accent]style: Concise[/]");
     expect(notify).toHaveBeenLastCalledWith("Output style selected: Concise", "info");
+  });
+
+  it("paints the style the plugin forces, not the one just selected", async () => {
+    const controller = new ForcedStyleController(createBuiltinRegistry());
+    controller.force("plugin-a", "concise");
+    const { command, state } = registerCommand(undefined, () => controller.activeForce());
+    const { context, setStatus } = menuContext("tui");
+
+    await command.handler("Proactive", context);
+
+    expect(state.getSelected()).toBe("proactive");
+    expect(setStatus).toHaveBeenLastCalledWith("pi-output-styles", "[accent]style: Concise[/]");
+  });
+
+  it("selects a custom style by the name the menu shows when it differs from the id", async () => {
+    const registry = mergeStyleSources(
+      createBuiltinRegistry(),
+      [
+        {
+          id: "team",
+          name: "Team Voice",
+          description: "Team voice.",
+          keepCodingInstructions: true,
+          instructions: "Team instructions.",
+          source: "user" as const,
+        },
+      ],
+      [],
+    ).registry;
+    const state = new SelectionState();
+    let command: RegisteredCommand | undefined;
+    const extensionApi = {
+      registerCommand: vi.fn((_name: string, options: Omit<RegisteredCommand, "name" | "sourceInfo">) => {
+        command = { name: "output-style", sourceInfo: {} as RegisteredCommand["sourceInfo"], ...options };
+      }),
+    } as unknown as ExtensionAPI;
+    registerOutputStyleCommand(extensionApi, registry, state);
+    const { context, notify } = menuContext("tui");
+
+    await command?.handler("Team Voice", context);
+
+    expect(state.getSelected()).toBe("team");
+    expect(notify).toHaveBeenLastCalledWith("Output style selected: Team Voice", "info");
   });
 
   it("closes the menu on Escape without changing selection, persistence or the status bar", async () => {

@@ -22,11 +22,35 @@ interface ActiveForce {
 
 export class ForcedStyleController {
   private readonly activeForces: ActiveForce[] = [];
+  private readonly listeners = new Set<() => void>();
+  private notifying = false;
 
   constructor(
     private readonly registry: StyleRegistry,
     private readonly onWarning?: ForcedStyleWarningHandler,
   ) {}
+
+  /** Subscribers run whenever the active force appears, changes or is released. */
+  onChange(listener: () => void): () => void {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+
+  private notifyChange(): void {
+    if (this.notifying) {
+      return;
+    }
+    this.notifying = true;
+    try {
+      for (const listener of [...this.listeners]) {
+        listener();
+      }
+    } finally {
+      this.notifying = false;
+    }
+  }
 
   force(pluginId: string, styleId: string): ForcedStyleHandle {
     const style = this.registry.resolve(styleId);
@@ -43,6 +67,7 @@ export class ForcedStyleController {
     const entry: ActiveForce = { pluginId, styleId };
     const firstForce = this.activeForces[0];
     this.activeForces.push(entry);
+    this.notifyChange();
 
     if (firstForce && firstForce.styleId !== styleId) {
       this.onWarning?.({
@@ -65,6 +90,7 @@ export class ForcedStyleController {
         const index = this.activeForces.indexOf(entry);
         if (index !== -1) {
           this.activeForces.splice(index, 1);
+          this.notifyChange();
         }
       },
     };
@@ -76,15 +102,21 @@ export class ForcedStyleController {
   }
 
   resolve(selectedId: string | undefined): string | undefined {
+    let dropped = false;
     while (this.activeForces.length > 0) {
       const firstForce = this.activeForces[0];
       const style = this.registry.resolve(firstForce.styleId);
       if (style && (style.source === "builtin" || style.instructions.trim().length > 0)) {
-        return firstForce.styleId;
+        break;
       }
       this.activeForces.shift();
+      dropped = true;
     }
-    return selectedId;
+    if (dropped) {
+      this.notifyChange();
+    }
+    const firstForce = this.activeForces[0];
+    return firstForce ? firstForce.styleId : selectedId;
   }
 }
 

@@ -107,6 +107,7 @@ export class StyleMenu {
   private selectedIndex: number;
   private cachedWidth: number | undefined;
   private cachedMaxHeight: number | undefined;
+  private cachedForceKey: string | undefined;
   private cachedLines: string[] | undefined;
   /**
    * Scroll state of the detail body. Pi composites overlays with a plain
@@ -140,6 +141,7 @@ export class StyleMenu {
   invalidate(): void {
     this.cachedWidth = undefined;
     this.cachedMaxHeight = undefined;
+    this.cachedForceKey = undefined;
     this.cachedLines = undefined;
   }
 
@@ -190,11 +192,19 @@ export class StyleMenu {
 
   private renderBox(width: number): string[] {
     const maxHeight = this.options.maxHeight();
-    if (this.cachedLines && this.cachedWidth === width && this.cachedMaxHeight === maxHeight) {
+    const force = this.options.getForce?.();
+    // The force state is part of the cache key: a plugin can apply or release a force while
+    // the menu is open, and the banner must appear without waiting for a key press.
+    const forceKey = force ? `${force.pluginId}\u0000${force.styleId}` : "";
+    if (
+      this.cachedLines &&
+      this.cachedWidth === width &&
+      this.cachedMaxHeight === maxHeight &&
+      this.cachedForceKey === forceKey
+    ) {
       return this.cachedLines;
     }
     const collapsed = width < DETAIL_PANEL_MIN_WIDTH;
-    const force = this.options.getForce?.();
     const box = new Box(0, 0);
     box.addChild(new DynamicBorder((text: string) => this.options.theme.fg("border", text)));
     if (force) {
@@ -212,6 +222,7 @@ export class StyleMenu {
     this.cachedLines = box.render(width);
     this.cachedWidth = width;
     this.cachedMaxHeight = maxHeight;
+    this.cachedForceKey = forceKey;
     return this.cachedLines;
   }
 

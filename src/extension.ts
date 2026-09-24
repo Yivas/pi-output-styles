@@ -56,6 +56,8 @@ export default async function registerOutputStylesExtension(pi: ExtensionAPI): P
     repaintIndicator?.();
   };
   const getSelectedStyleId = () => forcedStyles.resolve(state.getSelected());
+  // The bar follows the effective style, so a force applied or released mid-session repaints it.
+  forcedStyles.onChange(() => repaintIndicator?.());
 
   pi.on("session_start", (_event, ctx) => {
     for (const error of startupErrors.splice(0)) {

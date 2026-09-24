@@ -49,7 +49,8 @@ export function registerOutputStyleCommand(
 
     state.setSelected(style.id);
     if (ctx.mode === "tui") {
-      paintStyleStatus(ctx.ui, ctx.ui.theme, style);
+      // The bar follows the style Pi will actually apply: a plugin's force still wins.
+      paintStyleStatus(ctx.ui, ctx.ui.theme, effectiveStyle(registry, style, activeForce?.()));
     }
     notify(ctx, `Output style selected: ${style.name}`);
   };
@@ -94,7 +95,15 @@ export function registerOutputStyleCommand(
         return;
       }
 
-      await applySelection(ctx, parsed.styleId);
+      const { style: resolvedStyle, ambiguous } = resolveStyleArgument(registry, parsed.styleId);
+      if (!resolvedStyle) {
+        const suffix = ambiguous.length > 1
+          ? ` — matches several styles: ${ambiguous.map((style) => style.id).join(", ")}`
+          : "";
+        notify(ctx, `Unknown output style: ${parsed.styleId}${suffix}`, "error");
+        return;
+      }
+      await applySelection(ctx, resolvedStyle.id);
     },
   });
 }
@@ -131,4 +140,36 @@ function notify(ctx: ExtensionCommandContext, message: string, type: "info" | "e
   if (ctx.hasUI) {
     ctx.ui.notify(message, type);
   }
+}
+
+/** The style Pi will actually apply: the forced one while a plugin keeps a force active. */
+function effectiveStyle(
+  registry: StyleRegistry,
+  selected: StyleDefinition,
+  forced: StyleMenuForce | undefined,
+): StyleDefinition {
+  if (!forced) {
+    return selected;
+  }
+  return registry.resolve(forced.styleId) ?? selected;
+}
+
+/**
+ * Resolves what the user typed: the id first, then the name the menu shows, so a style whose
+ * visible name differs from its id can still be selected the way it is displayed.
+ */
+function resolveStyleArgument(
+  registry: StyleRegistry,
+  value: string,
+): { style: StyleDefinition | undefined; ambiguous: readonly StyleDefinition[] } {
+  const normalized = normalizeStyleId(value);
+  const byId = registry.resolve(normalized);
+  if (byId) {
+    return { style: byId, ambiguous: [] };
+  }
+  const byName = registry.list().filter((style) => normalizeStyleId(style.name) === normalized);
+  if (byName.length === 1) {
+    return { style: byName[0], ambiguous: [] };
+  }
+  return { style: undefined, ambiguous: byName };
 }

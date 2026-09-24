@@ -242,6 +242,17 @@ describe("StyleMenu forced state", () => {
     }
   });
 
+  it("shows the banner as soon as a force appears, without a key press", () => {
+    const { controller, menu } = forcedMenu();
+    expect(menu.render(120).join("\n")).not.toContain("Forced by");
+
+    controller.force("plugin-a", "concise");
+
+    expect(menu.render(120).join("\n")).toContain(
+      "Forced by plugin-a — selection overridden, Enter disabled",
+    );
+  });
+
   it("drops the banner and restores row colors after the force is released", () => {
     const { controller, menu } = forcedMenu();
     const force = controller.force("plugin-a", "concise");

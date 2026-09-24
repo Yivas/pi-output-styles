@@ -65,4 +65,17 @@ describe("ForcedStyleController", () => {
     expect(warning).toHaveBeenCalledWith(expect.objectContaining({ code: "invalid-force", styleId: "missing-style" }));
     expect(() => force.release()).not.toThrow();
   });
+
+  it("notifies subscribers when the active force appears or is released", () => {
+    const controller = new ForcedStyleController(createBuiltinRegistry());
+    const seen: (string | undefined)[] = [];
+    const off = controller.onChange(() => seen.push(controller.activeForce()?.styleId));
+
+    const force = controller.force("plugin-a", "concise");
+    force.release();
+    off();
+    controller.force("plugin-b", "proactive");
+
+    expect(seen).toEqual(["concise", undefined]);
+  });
 });
