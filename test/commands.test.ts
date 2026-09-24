@@ -156,7 +156,7 @@ function menuContext(mode: string, custom: ReturnType<typeof vi.fn> = vi.fn()) {
 }
 
 describe("/output-style menu guards", () => {
-  it("opens the menu overlay in TUI mode without emitting the text listing", async () => {
+  it("opens the menu dialog in TUI mode without emitting the text listing", async () => {
     const { command } = registerCommand();
     const { context, custom, notify } = menuContext("tui");
 
@@ -166,35 +166,23 @@ describe("/output-style menu guards", () => {
     expect(notify).not.toHaveBeenCalled();
   });
 
-  it("opens the menu as an overlay bounded to the terminal height and anchored at the bottom", async () => {
+  it("opens the menu as a native dialog in the editor slot, without overlay and at natural height", async () => {
     const { command } = registerCommand();
-    const custom = vi.fn(
-      (
-        factory: MenuFactory,
-        options: {
-          overlay?: boolean;
-          overlayOptions?: () => { maxHeight?: number; anchor?: string; margin?: { bottom?: number } };
-        },
-      ) => {
-        // The real overlay path runs the factory before resolving overlayOptions.
-        factory({ requestRender: vi.fn(), terminal: { rows: 40 } }, fakeTheme(), {}, () => null);
-        return options;
-      },
-    );
+    let renderedHeight = 0;
+    const custom = vi.fn((factory: MenuFactory, options?: { overlay?: boolean }) => {
+      // The real modal path runs the factory and mounts the component in the editor slot.
+      const component = factory({ requestRender: vi.fn(), terminal: { rows: 40 } }, fakeTheme(), {}, () => null);
+      renderedHeight = component.render(120).length;
+      return options;
+    });
     const { context } = menuContext("tui", custom);
 
     await command.handler("", context);
 
-    const options = custom.mock.results[0]?.value as {
-      overlay?: boolean;
-      overlayOptions?: () => { maxHeight?: number; anchor?: string; margin?: { bottom?: number } };
-    };
-    expect(options.overlay).toBe(true);
-    expect(options.overlayOptions?.()).toEqual({
-      maxHeight: 40,
-      anchor: "bottom-center",
-      margin: { bottom: 1 },
-    });
+    // No overlay options at all: the component goes to the same slot as Pi's own dialogs.
+    expect(custom.mock.calls[0]?.[1]).toBeUndefined();
+    // Natural dialog height: one row per style plus borders and footer, not the terminal height.
+    expect(renderedHeight).toBe(createBuiltinRegistry().list().length + 3);
   });
 
   it.each(["rpc", "print", "json"])("keeps the text listing in %s mode", async (mode) => {

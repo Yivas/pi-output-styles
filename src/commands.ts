@@ -62,34 +62,22 @@ export function registerOutputStyleCommand(
         // The menu is the no-argument route and only exists in the TUI; every other
         // mode and the explicit `list` argument keep the plain-text listing.
         if (args.trim().length === 0 && ctx.mode === "tui") {
-          // One height budget shared by the overlay clamp and the menu (the real
-          // overlay path resolves overlayOptions after running the factory): the
-          // component never renders more rows than the overlay paints, so the
-          // detail status line cannot fall off the screen.
-          let heightBudget = 1;
-          const chosenId = await ctx.ui.custom<string | null>(
-            (tui, theme, _keybindings, done) => {
-              heightBudget = Math.max(1, tui.terminal.rows);
-              return new StyleMenu({
-                registry,
-                theme,
-                activeStyleId: getActiveStyle(registry, state).id,
-                getForce: activeForce,
-                maxHeight: () => Math.min(heightBudget, Math.max(1, tui.terminal.rows)),
-                done,
-                requestRender: () => tui.requestRender(),
-              });
-            },
-            // Pi anchors overlays at the center by default; the menu sits at the
-            // bottom above the input line, like the rest of Pi's TUI panels.
-            {
-              overlay: true,
-              overlayOptions: () => ({
-                maxHeight: heightBudget,
-                anchor: "bottom-center",
-                margin: { bottom: 1 },
-              }),
-            },
+          // Native dialog slot: ctx.ui.custom without overlay mounts the component in
+          // the editor container, the same place as Pi's own dialogs (ui.select and the
+          // model picker), and restores the editor on close. Natural height is one row
+          // per style plus one spare row for the detail zone and the menu chrome
+          // (two borders and the footer), capped to fit the screen.
+          const naturalHeight = registry.list().length + 4;
+          const chosenId = await ctx.ui.custom<string | null>((tui, theme, _keybindings, done) =>
+            new StyleMenu({
+              registry,
+              theme,
+              activeStyleId: getActiveStyle(registry, state).id,
+              getForce: activeForce,
+              maxHeight: () => Math.min(naturalHeight, Math.max(4, tui.terminal.rows - 2)),
+              done,
+              requestRender: () => tui.requestRender(),
+            }),
           );
           if (chosenId) {
             await applySelection(ctx, chosenId);
