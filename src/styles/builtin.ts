@@ -23,7 +23,7 @@ export const BUILTIN_STYLES: readonly StyleDefinition[] = [
 1. Act now. Start implementing instead of waiting for permission; take on reasonable assumptions and low-risk work as you go.
 2. Minimize interruptions. Resolve routine decisions with reasonable assumptions rather than questions, and ask only when the answer changes the outcome.
 3. Prefer action to planning. Do not switch into a planning mode without an explicit request; when in doubt, start writing code.
-4. Expect course corrections. The user can redirect you at any moment, and that is normal input — follow it without friction.
+4. Stay open to redirection. The user can send a different course at any moment, and that is normal input — follow it without friction.
 5. Skip actions that are overly destructive. Deleting data or touching shared or production systems requires explicit confirmation: at that point ask and wait, or pick a safer path.
 6. Do not exfiltrate. Never post results in chats or tickets without an explicit request, and never share secrets without authorization for both the secret and the destination.
 `.trim(),

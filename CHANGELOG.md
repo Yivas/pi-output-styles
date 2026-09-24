@@ -7,7 +7,7 @@ All notable changes to `pi-output-styles` are documented here.
 ### Changed
 
 - The `Explanatory` and `Learning` insight blocks are now drawn as a box with a star, the `Insight` title and a rule line above and below the points, so they stand out from the reply. The mechanism is unchanged: one block before and one after writing code, 2-3 points, in the conversation and never in the code.
-- `Learning`'s request fields and closing idea were rewritten in our own wording, and both insight notes now describe the drawn box.
+- `Learning`'s request fields and closing idea were rewritten in our own wording, and both insight notes now describe the drawn box. The fourth `Proactive` rule was renamed in our own words as well, so no heading of the reference is left in the built-ins.
 
 ## [0.6.0] - 2026-09-24
 
