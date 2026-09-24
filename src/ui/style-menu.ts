@@ -13,6 +13,7 @@ import {
   wrapTextWithAnsi,
 } from "@earendil-works/pi-tui";
 import type { Component, TuiMouseEvent, TuiMouseEventResult } from "@earendil-works/pi-tui";
+import { stripControlSequences } from "../text-safety.js";
 import type { StyleDefinition, StyleRegistry } from "../styles/types.js";
 
 /** Below this render width the detail panel collapses and descriptions move into the rows. */
@@ -90,6 +91,17 @@ export interface StyleMenuOptions {
   requestRender: () => void;
 }
 
+/** Display copy of a style: printable text only, so style content cannot drive the terminal. */
+function sanitizeStyleForDisplay(style: StyleDefinition): StyleDefinition {
+  return {
+    ...style,
+    name: stripControlSequences(style.name),
+    description: stripControlSequences(style.description),
+    instructions: stripControlSequences(style.instructions),
+    ...(style.filePath === undefined ? {} : { filePath: stripControlSequences(style.filePath) }),
+  };
+}
+
 export class StyleMenu {
   private readonly styles: readonly StyleDefinition[];
   private selectedIndex: number;
@@ -113,7 +125,10 @@ export class StyleMenu {
   private collapsedDescriptionLines = 0;
 
   constructor(private readonly options: StyleMenuOptions) {
-    this.styles = options.registry.list();
+    // Style files are untrusted input: a repository can ship `.pi/output-styles/*.md` whose
+    // escape sequences would otherwise reach the terminal through this menu, so the copy
+    // used for painting is stripped of control sequences (the chosen id is unaffected).
+    this.styles = options.registry.list().map(sanitizeStyleForDisplay);
     const activeIndex = this.styles.findIndex((style) => style.id === options.activeStyleId);
     this.selectedIndex = activeIndex === -1 ? 0 : activeIndex;
     this.mouseRegion = new MouseRegion(
