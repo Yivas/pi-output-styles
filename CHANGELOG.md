@@ -4,6 +4,8 @@ All notable changes to `pi-output-styles` are documented here.
 
 ## Unreleased
 
+## [0.5.0] - 2026-09-24
+
 ### Added
 
 - Five new built-in styles, selectable with `/output-style` and applied like the existing ones: `Reviewer` (a critical code-review lens on any code you read or write), `Diagrams first` (mermaid-first structure and flow explanations), `STE` (ASD-STE100 Simplified Technical English with an action-first reply shape), `Caveman` (ultra-terse telegraphic replies that keep technical tokens exact), and `ELI5` (plain words for a tired reader, capped at two options per decision). Each ships with its own turn reminder; the waiting reminder stays fail-closed on Pi 0.87.0.

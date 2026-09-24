@@ -6,7 +6,7 @@ The compatibility statements in this document are limited to the Pi installation
 
 - Pi package: local dependency `@earendil-works/pi-coding-agent` `0.87.0` (the API probe pins `PI_PACKAGE_DIR` to this dependency so an unrelated global Pi installation cannot change the observed version)
 - Node.js: the local Node.js `v24.9.0` installation used for the checks
-- Package status: `pi-response-styles` `0.4.0` published on GitHub Releases as `v0.4.0` and on npm as `pi-response-styles@0.4.0`; compatibility verified against Pi `0.87.0` only; `waitingTurnReminder` blocked (FAIL-CLOSED); cross-plugin force delivery through `pi.events` covered by local integration tests
+- Package status: `pi-response-styles` `0.5.0` published on GitHub Releases as `v0.5.0` and on npm as `pi-response-styles@0.5.0`; compatibility verified against Pi `0.87.0` only; `waitingTurnReminder` blocked (FAIL-CLOSED); cross-plugin force delivery through `pi.events` covered by local integration tests
 
 ## Observed extension API
 
@@ -58,6 +58,12 @@ Version `0.4.0` adds two TUI surfaces, covered by the local suite (`test/ui/styl
 - While another plugin forces a style the menu shows `Forced by <plugin> — selection overridden` with every row muted and Enter disabled until the force is released. Load warnings are reported at session start, and a persisted selection that no longer exists falls back to `default` in both the menu marker and the indicator.
 - Borders, optional banner, list, detail, and footer share one row budget, so the status line never renders past the rows the overlay paints; terminals shorter than about 8 rows can clip the menu.
 - The status bar shows `style: <name>` for the effective style under the extension-owned key `pi-output-styles`: muted for `default`, accent otherwise. It is painted in TUI mode at session start, after a direct selection, and after the menu's Enter. Colors come from the theme current at write time; a theme change does not repaint an already-written entry.
+
+## Built-in style catalog
+
+Version `0.5.0` adds five built-in styles — `Reviewer`, `Diagrams first`, `STE`, `Caveman`, and `ELI5` — raising the catalog to ten, including `default`. Each new style declares `keepCodingInstructions: true` and its own `turnReminder`, emitted through the verified `turn_start` hook; none declares a `waitingTurnReminder`, which stays reserved for `Proactive` and blocked (FAIL-CLOSED) on Pi `0.87.0`. Selection, persistence, injection, and the menu are unchanged: the new identifiers resolve through the same registry and appear in `/output-style`, the menu, and the status indicator.
+
+Coverage comes from the local suite: parity assertions per style in `test/styles/builtin-parity.test.ts`, exact catalog lists in `test/styles/registry.test.ts` and `test/styles/merge.test.ts`, reminder emission and the silent group in `test/reminders-turn.test.ts`, and the menu bound-arrows count in `test/ui/style-menu.test.ts`. The full suite runs 160 passed, 1 skipped; instruction texts are original wording, with third-party attributions in the README credits.
 
 ## Registry installation
 
