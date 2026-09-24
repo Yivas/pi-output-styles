@@ -4,6 +4,8 @@ All notable changes to `pi-output-styles` are documented here.
 
 ## Unreleased
 
+## [0.6.2] - 2026-09-25
+
 ### Security
 
 - Style content is untrusted text for the terminal, and the plugin now strips terminal escape sequences and invisible formatting from it before painting or notifying anything (menu, plain listing, status messages and turn reminders): a repository-provided `.pi/output-styles/*.md` can no longer clear the screen, move the cursor, spoof the title, inject links or write the clipboard. The text that reaches the model is unchanged, and the plugin does not claim the terminal is clean for content produced by other extensions.
