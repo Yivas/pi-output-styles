@@ -76,8 +76,11 @@ describe("built-in style parity", () => {
     expect(style?.keepCodingInstructions).toBe(true);
     expectNoReminders(style);
     expect(style?.instructions).toMatch(/^### Educational frame/m);
-    expect(style?.instructions).toContain("> **Insight**");
+    expect(style?.instructions).toContain("`★ Insight ─────────────────────────────────────`");
+    expect(style?.instructions).toContain("`─────────────────────────────────────────────────`");
+    expect(style?.instructions).not.toContain("> **Insight**");
     expect(style?.instructions).toMatch(/\b2-3\b/);
+    expect(style?.instructions).toMatch(/anchored to this project's code/i);
     expect(style?.instructions).toMatch(/before writing code/i);
     expect(style?.instructions).toMatch(/after writing code/i);
     expect(style?.instructions).toMatch(/in the conversation/i);
@@ -115,10 +118,15 @@ describe("built-in style parity", () => {
     expect(instructions).toMatch(/^Example 1[^\n]*complete function/im);
     expect(instructions).toMatch(/^Example 2[^\n]*partial function/im);
     expect(instructions).toMatch(/^Example 3[^\n]*debugging/im);
-    // Closing: no praise, plus the shared insight mechanism.
+    // Closing: no praise, plus the shared insight mechanism in the drawn box.
     expect(instructions).toMatch(/no praise/i);
-    expect(instructions).toContain("> **Insight**");
+    expect(instructions).toContain("`★ Insight ─────────────────────────────────────`");
+    expect(instructions).toContain("`─────────────────────────────────────────────────`");
+    expect(instructions).not.toContain("> **Insight**");
     expect(instructions).toMatch(/\b2-3\b/);
+    expect(instructions).toMatch(/in the conversation only/i);
+    // The closing idea is our own wording: the reference's run of words stays out.
+    expect(instructions).not.toMatch(/broader patterns or system effects/i);
   });
 
   it("Reviewer has the review lens, six numbered rules and a turn reminder", () => {
