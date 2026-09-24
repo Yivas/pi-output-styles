@@ -4,6 +4,8 @@ All notable changes to `pi-output-styles` are documented here.
 
 ## Unreleased
 
+## [0.6.1] - 2026-09-24
+
 ### Changed
 
 - The `Explanatory` and `Learning` insight blocks are now drawn as a box with a star, the `Insight` title and a rule line above and below the points, so they stand out from the reply. The mechanism is unchanged: one block before and one after writing code, 2-3 points, in the conversation and never in the code.
