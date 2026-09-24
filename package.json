@@ -1,6 +1,6 @@
 {
   "name": "pi-response-styles",
-  "version": "0.5.2",
+  "version": "0.6.0",
   "description": "Switchable response styles for the Pi coding agent, selected with the /output-style command and persisted between sessions.",
   "license": "MIT",
   "repository": {
