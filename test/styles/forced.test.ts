@@ -66,6 +66,37 @@ describe("ForcedStyleController", () => {
     expect(() => force.release()).not.toThrow();
   });
 
+  it("keeps force() usable when a subscriber throws", () => {
+    const controller = new ForcedStyleController(createBuiltinRegistry());
+    controller.onChange(() => {
+      throw new Error("subscriber blew up");
+    });
+
+    const force = controller.force("plugin-a", "concise");
+
+    expect(controller.activeForce()).toEqual({ pluginId: "plugin-a", styleId: "concise" });
+    expect(controller.resolve("default")).toBe("concise");
+    expect(() => force.release()).not.toThrow();
+    expect(controller.activeForce()).toBeUndefined();
+  });
+
+  it("repeats the notification pass when a subscriber changes the force", () => {
+    const controller = new ForcedStyleController(createBuiltinRegistry());
+    const early = controller.force("plugin-a", "concise");
+    const observed: (string | undefined)[] = [];
+    const offObserver = controller.onChange(() => observed.push(controller.activeForce()?.styleId));
+    const offMutator = controller.onChange(() => early.release());
+
+    const late = controller.force("plugin-b", "proactive");
+    offObserver();
+    offMutator();
+
+    // The first pass saw the original force; releasing it from a listener must trigger a
+    // second pass, so every listener learns the state that is active now.
+    expect(observed).toEqual(["concise", "proactive"]);
+    expect(late.release).toBeTypeOf("function");
+  });
+
   it("notifies subscribers when the active force appears or is released", () => {
     const controller = new ForcedStyleController(createBuiltinRegistry());
     const seen: (string | undefined)[] = [];

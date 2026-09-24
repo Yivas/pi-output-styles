@@ -24,6 +24,7 @@ export class ForcedStyleController {
   private readonly activeForces: ActiveForce[] = [];
   private readonly listeners = new Set<() => void>();
   private notifying = false;
+  private pendingNotification = false;
 
   constructor(
     private readonly registry: StyleRegistry,
@@ -40,12 +41,30 @@ export class ForcedStyleController {
 
   private notifyChange(): void {
     if (this.notifying) {
+      // A listener changed the state during a pass: run another pass instead of dropping the
+      // notice, so every listener sees the final state.
+      this.pendingNotification = true;
       return;
     }
     this.notifying = true;
     try {
-      for (const listener of [...this.listeners]) {
-        listener();
+      let passes = 0;
+      do {
+        this.pendingNotification = false;
+        for (const listener of [...this.listeners]) {
+          try {
+            listener();
+          } catch (error) {
+            // A failing subscriber must never break force(), release() or resolve(): the
+            // controller is public API and is shared with other extensions.
+            const detail = error instanceof Error ? error.message : String(error);
+            console.error(`[pi-output-styles] style force subscriber failed: ${detail}`);
+          }
+        }
+        passes += 1;
+      } while (this.pendingNotification && passes < 10);
+      if (this.pendingNotification) {
+        console.error("[pi-output-styles] style force subscribers kept changing state; stopping after 10 passes");
       }
     } finally {
       this.notifying = false;

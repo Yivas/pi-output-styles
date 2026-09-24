@@ -1,5 +1,6 @@
 import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import { normalizeStyleId } from "./styles/parser.js";
+import { stripControlSequences } from "./text-safety.js";
 import type { SelectionStore } from "./settings.js";
 import type { StyleDefinition, StyleRegistry } from "./styles/types.js";
 import { SelectionState } from "./state.js";
@@ -52,7 +53,7 @@ export function registerOutputStyleCommand(
       // The bar follows the style Pi will actually apply: a plugin's force still wins.
       paintStyleStatus(ctx.ui, ctx.ui.theme, effectiveStyle(registry, style, activeForce?.()));
     }
-    notify(ctx, `Output style selected: ${style.name}`);
+    notify(ctx, `Output style selected: ${stripControlSequences(style.name)}`);
   };
 
   pi.registerCommand("output-style", {
@@ -97,10 +98,14 @@ export function registerOutputStyleCommand(
 
       const { style: resolvedStyle, ambiguous } = resolveStyleArgument(registry, parsed.styleId);
       if (!resolvedStyle) {
-        const suffix = ambiguous.length > 1
-          ? ` — matches several styles: ${ambiguous.map((style) => style.id).join(", ")}`
-          : "";
-        notify(ctx, `Unknown output style: ${parsed.styleId}${suffix}`, "error");
+        // Echo what the user typed (not the normalized id) when reporting the problem.
+        const value = stripControlSequences(args.trim());
+        if (ambiguous.length > 1) {
+          const candidates = ambiguous.map((style) => style.id).join(", ");
+          notify(ctx, `Ambiguous output style: ${value} — matches several styles: ${candidates} (use the id)`, "error");
+          return;
+        }
+        notify(ctx, `Unknown output style: ${value}`, "error");
         return;
       }
       await applySelection(ctx, resolvedStyle.id);
@@ -111,7 +116,7 @@ export function registerOutputStyleCommand(
 function formatStyleList(registry: StyleRegistry, state: SelectionState): string {
   const active = getActiveStyle(registry, state);
   const styles = registry.list()
-    .map((style) => `${style.id === active.id ? "*" : " "} ${style.name} — ${style.description} [${formatStyleSource(style.source)}]`)
+    .map((style) => `${style.id === active.id ? "*" : " "} ${stripControlSequences(style.name)} — ${stripControlSequences(style.description)} [${formatStyleSource(style.source)}]`)
     .join("\n");
   return `Available output styles:\n${styles}\nActive: ${active.id}`;
 }

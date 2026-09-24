@@ -109,6 +109,94 @@ describe("/output-style", () => {
     });
   });
 
+  it("persists the selection even while a plugin forces another style", async () => {
+    const controller = new ForcedStyleController(createBuiltinRegistry());
+    controller.force("plugin-a", "concise");
+    const selection: SelectionStore = {
+      read: vi.fn(async () => undefined),
+      write: vi.fn(async () => {}),
+    };
+    const { command, state } = registerCommand(selection, () => controller.activeForce());
+    const { context } = menuContext("tui");
+
+    await command.handler("Proactive", context);
+
+    expect(selection.write).toHaveBeenCalledWith("proactive");
+    expect(state.getSelected()).toBe("proactive");
+  });
+
+  it("prefers the built-in id over a custom style showing the same name", async () => {
+    const registry = mergeStyleSources(
+      createBuiltinRegistry(),
+      [
+        {
+          id: "my-concise",
+          name: "Concise",
+          description: "A custom style named like the built-in.",
+          keepCodingInstructions: true,
+          instructions: "Custom concise instructions.",
+          source: "user" as const,
+        },
+      ],
+      [],
+    ).registry;
+    const state = new SelectionState();
+    let command: RegisteredCommand | undefined;
+    const extensionApi = {
+      registerCommand: vi.fn((_name: string, options: Omit<RegisteredCommand, "name" | "sourceInfo">) => {
+        command = { name: "output-style", sourceInfo: {} as RegisteredCommand["sourceInfo"], ...options };
+      }),
+    } as unknown as ExtensionAPI;
+    registerOutputStyleCommand(extensionApi, registry, state);
+    const { context } = menuContext("tui");
+
+    await command?.handler("Concise", context);
+
+    expect(state.getSelected()).toBe("concise");
+  });
+
+  it("reports an ambiguous name with the candidate ids and how to disambiguate", async () => {
+    const registry = mergeStyleSources(
+      createBuiltinRegistry(),
+      [
+        {
+          id: "team-a",
+          name: "Team Voice",
+          description: "First.",
+          keepCodingInstructions: true,
+          instructions: "First body.",
+          source: "user" as const,
+        },
+        {
+          id: "team-b",
+          name: "Team voice",
+          description: "Second.",
+          keepCodingInstructions: true,
+          instructions: "Second body.",
+          source: "project" as const,
+        },
+      ],
+      [],
+    ).registry;
+    const state = new SelectionState();
+    let command: RegisteredCommand | undefined;
+    const extensionApi = {
+      registerCommand: vi.fn((_name: string, options: Omit<RegisteredCommand, "name" | "sourceInfo">) => {
+        command = { name: "output-style", sourceInfo: {} as RegisteredCommand["sourceInfo"], ...options };
+      }),
+    } as unknown as ExtensionAPI;
+    registerOutputStyleCommand(extensionApi, registry, state);
+    const { context, notify } = menuContext("tui");
+
+    await command?.handler("Team Voice", context);
+
+    expect(state.getSelected()).toBeUndefined();
+    expect(notify).toHaveBeenLastCalledWith(
+      "Ambiguous output style: Team Voice — matches several styles: team-a, team-b (use the id)",
+      "error",
+    );
+  });
+
   it("reports an unknown style and leaves the active style unchanged", async () => {
     const { command, state } = registerCommand();
     const notify = vi.fn();
