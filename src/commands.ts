@@ -92,7 +92,8 @@ export function registerOutputStyleCommand(
         return;
       }
       if (parsed.action === "status") {
-        notify(ctx, `Active output style: ${getActiveStyle(registry, state).name}`);
+        const active = getActiveStyle(registry, state);
+        notify(ctx, `Active output style: ${stripControlSequences(active.name)}`);
         return;
       }
 

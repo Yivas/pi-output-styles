@@ -4,6 +4,15 @@ All notable changes to `pi-output-styles` are documented here.
 
 ## Unreleased
 
+### Security
+
+- Style content is untrusted text for the terminal, and the plugin now strips terminal escape sequences and invisible formatting from it before painting or notifying anything (menu, plain listing, status messages and turn reminders): a repository-provided `.pi/output-styles/*.md` can no longer clear the screen, move the cursor, spoof the title, inject links or write the clipboard. The text that reaches the model is unchanged, and the plugin does not claim the terminal is clean for content produced by other extensions.
+
+### Fixed
+
+- The status bar follows the effective style while a plugin forces one, and repaints when the force is applied or released; the forced banner appears as soon as a force exists instead of waiting for a key press; and `/output-style` accepts the name the menu shows (the id wins when both could match), reporting an ambiguous name with the candidate ids.
+- A subscriber that fails can no longer break the force API: `force()`, `release()` and `resolve()` keep working, and the failure is logged; a state change made from a subscriber triggers another notification pass instead of dropping the notice.
+
 ## [0.6.1] - 2026-09-24
 
 ### Changed

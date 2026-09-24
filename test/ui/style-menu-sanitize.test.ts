@@ -53,6 +53,13 @@ describe("stripControlSequences", () => {
     expect(stripControlSequences(`A${esc}]52;c;unterminatedB`)).toBe("A");
   });
 
+  it("keeps the ZWNJ that Persian and Indic scripts need, and still drops bidi and ZWSP", () => {
+    const zwnj = String.fromCharCode(0x200c);
+    expect(stripControlSequences(`می${zwnj}خواهم`)).toBe(`می${zwnj}خواهم`);
+    expect(stripControlSequences("A\u200bB")).toBe("AB");
+    expect(stripControlSequences("A\u202eB")).toBe("AB");
+  });
+
   it("removes invisible formatting that reorders or hides text, keeping ZWJ", () => {
     expect(stripControlSequences("A\u202eB")).toBe("AB");
     expect(stripControlSequences("A\u2066B\u2069")).toBe("AB");

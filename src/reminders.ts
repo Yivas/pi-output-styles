@@ -1,4 +1,5 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { stripControlSequences } from "./text-safety.js";
 import type { StyleDefinition } from "./styles/types.js";
 
 export interface ReminderCapability {
@@ -20,7 +21,9 @@ export function registerStyleReminders(
       if (!hasReminder(reminder)) {
         return;
       }
-      context.ui.notify(reminder, "info");
+      // The reminder comes from a style file, so it is untrusted text for the terminal.
+      // It never reaches the model prompt, so stripping sequences here loses nothing.
+      context.ui.notify(stripControlSequences(reminder), "info");
     });
   } catch {
     return { turn: false, waiting: false };

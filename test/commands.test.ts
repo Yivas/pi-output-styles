@@ -14,6 +14,8 @@ import { mergeStyleSources } from "../src/styles/merge.js";
 import { ForcedStyleController } from "../src/styles/forced.js";
 import type { StyleMenuTheme } from "../src/ui/style-menu.js";
 
+const esc = String.fromCharCode(27);
+
 describe("parseOutputStyleArgs", () => {
   it.each([
     ["", { action: "list" }],
@@ -195,6 +197,38 @@ describe("/output-style", () => {
       "Ambiguous output style: Team Voice — matches several styles: team-a, team-b (use the id)",
       "error",
     );
+  });
+
+  it("strips terminal sequences from the status message of a custom style", async () => {
+    const registry = mergeStyleSources(
+      createBuiltinRegistry(),
+      [
+        {
+          id: "hostile",
+          name: `Hostile${esc}[2JName`,
+          description: "Hostile description.",
+          keepCodingInstructions: true,
+          instructions: "Hostile instructions.",
+          source: "user" as const,
+        },
+      ],
+      [],
+    ).registry;
+    const state = new SelectionState();
+    state.setSelected("hostile");
+    let command: RegisteredCommand | undefined;
+    const extensionApi = {
+      registerCommand: vi.fn((_name: string, options: Omit<RegisteredCommand, "name" | "sourceInfo">) => {
+        command = { name: "output-style", sourceInfo: {} as RegisteredCommand["sourceInfo"], ...options };
+      }),
+    } as unknown as ExtensionAPI;
+    registerOutputStyleCommand(extensionApi, registry, state);
+    const { context, notify } = menuContext("tui");
+
+    await command?.handler("status", context);
+
+    const message = notify.mock.calls[0]?.[0] as string;
+    expect(message).toBe("Active output style: HostileName");
   });
 
   it("reports an unknown style and leaves the active style unchanged", async () => {

@@ -23,8 +23,9 @@ export function stripControlSequences(text: string): string {
       .replace(/\u001b[ -/]*[0-~]/g, "")
       // Remaining C0 and C1 controls, keeping tab and newline.
       .replace(/[\u0000-\u0008\u000b-\u001f\u007f-\u009f]/g, "")
-      // Invisible formatting that reorders or hides what the user reads (bidi controls and the
-      // zero-width space/non-joiner; the zero-width joiner stays, it holds emoji together).
-      .replace(/[\u200b\u200c\u202a-\u202e\u2066-\u2069]/g, "")
+      // Invisible formatting that reorders or hides what the user reads: bidi controls and the
+      // zero-width space. The zero-width joiner (U+200D) holds emoji together and the
+      // non-joiner (U+200C) is required by Persian and Indic scripts, so both stay.
+      .replace(/[\u200b\u202a-\u202e\u2066-\u2069]/g, "")
   );
 }

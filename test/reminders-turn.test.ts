@@ -133,6 +133,17 @@ describe("declared built-in reminders", () => {
     }
   });
 
+  it("strips terminal sequences from a reminder before notifying", async () => {
+    const hostile: StyleDefinition = {
+      ...styleWithReminder,
+      turnReminder: `Reminder${String.fromCharCode(27)}[2Jtext`,
+    };
+
+    const { notifications } = await emitTurn(hostile);
+
+    expect(notifications).toEqual(["Remindertext"]);
+  });
+
   it("keeps the Proactive waiting reminder declared without ever emitting it", async () => {
     const style = registry.resolve("proactive");
     if (!style?.waitingTurnReminder) {
