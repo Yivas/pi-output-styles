@@ -83,6 +83,8 @@ describe("built-in style parity", () => {
     expect(style?.instructions).toMatch(/anchored to this project's code/i);
     expect(style?.instructions).toMatch(/before writing code/i);
     expect(style?.instructions).toMatch(/after writing code/i);
+    expect(style?.instructions).toMatch(/write no code/i);
+    expect(style?.instructions).toMatch(/close with .*insight/i);
     expect(style?.instructions).toMatch(/in the conversation/i);
     expect(style?.instructions).toMatch(/never (written )?into the code/i);
   });

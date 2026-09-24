@@ -4,6 +4,10 @@ All notable changes to `pi-output-styles` are documented here.
 
 ## Unreleased
 
+### Changed
+
+- `Explanatory` now asks for one insight block also in turns that write no code — a review, an analysis, an answer — closing with what was found, decided, or would change, and its anchor covers the work of the turn instead of only code just written. The rest of the mechanism (before and after writing code, 2-3 points, in the conversation, never in the code) is unchanged.
+
 ## [0.6.1] - 2026-09-24
 
 ### Changed
