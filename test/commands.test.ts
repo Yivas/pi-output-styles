@@ -166,12 +166,15 @@ describe("/output-style menu guards", () => {
     expect(notify).not.toHaveBeenCalled();
   });
 
-  it("opens the menu as an overlay bounded to the terminal height", async () => {
+  it("opens the menu as an overlay bounded to the terminal height and anchored at the bottom", async () => {
     const { command } = registerCommand();
     const custom = vi.fn(
       (
         factory: MenuFactory,
-        options: { overlay?: boolean; overlayOptions?: () => { maxHeight?: number } },
+        options: {
+          overlay?: boolean;
+          overlayOptions?: () => { maxHeight?: number; anchor?: string; margin?: { bottom?: number } };
+        },
       ) => {
         // The real overlay path runs the factory before resolving overlayOptions.
         factory({ requestRender: vi.fn(), terminal: { rows: 40 } }, fakeTheme(), {}, () => null);
@@ -184,10 +187,14 @@ describe("/output-style menu guards", () => {
 
     const options = custom.mock.results[0]?.value as {
       overlay?: boolean;
-      overlayOptions?: () => { maxHeight?: number };
+      overlayOptions?: () => { maxHeight?: number; anchor?: string; margin?: { bottom?: number } };
     };
     expect(options.overlay).toBe(true);
-    expect(options.overlayOptions?.()).toEqual({ maxHeight: 40 });
+    expect(options.overlayOptions?.()).toEqual({
+      maxHeight: 40,
+      anchor: "bottom-center",
+      margin: { bottom: 1 },
+    });
   });
 
   it.each(["rpc", "print", "json"])("keeps the text listing in %s mode", async (mode) => {

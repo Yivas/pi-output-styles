@@ -4,6 +4,10 @@ All notable changes to `pi-output-styles` are documented here.
 
 ## Unreleased
 
+### Changed
+
+- The `/output-style` menu overlay now opens anchored at the bottom above the input line (`bottom-center` with a one-row margin), like the rest of Pi's TUI panels, instead of centered mid-screen. The layout, keyboard, states, scrolling and the status indicator are unchanged.
+
 ## [0.5.0] - 2026-09-24
 
 ### Added

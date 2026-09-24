@@ -80,7 +80,16 @@ export function registerOutputStyleCommand(
                 requestRender: () => tui.requestRender(),
               });
             },
-            { overlay: true, overlayOptions: () => ({ maxHeight: heightBudget }) },
+            // Pi anchors overlays at the center by default; the menu sits at the
+            // bottom above the input line, like the rest of Pi's TUI panels.
+            {
+              overlay: true,
+              overlayOptions: () => ({
+                maxHeight: heightBudget,
+                anchor: "bottom-center",
+                margin: { bottom: 1 },
+              }),
+            },
           );
           if (chosenId) {
             await applySelection(ctx, chosenId);
