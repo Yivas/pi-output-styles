@@ -9,6 +9,7 @@ import {
   TruncatedText,
   VStack,
   matchesKey,
+  visibleWidth,
   wrapTextWithAnsi,
 } from "@earendil-works/pi-tui";
 import type { Component, TuiMouseEvent, TuiMouseEventResult } from "@earendil-works/pi-tui";
@@ -18,14 +19,47 @@ import type { StyleDefinition, StyleRegistry } from "../styles/types.js";
 export const DETAIL_PANEL_MIN_WIDTH = 80;
 
 const ZONE_GAP = 2;
-const LIST_ZONE_RATIO = 0.4;
+const MIN_LIST_WIDTH = 18;
+const MAX_LIST_RATIO = 0.6;
+/** The fixed two-glyph cursor/active prefix plus its trailing space. */
+const ROW_PREFIX_WIDTH = 4;
+const HEADER_TEXT = "Select an output style";
+const CHROME_ROWS = 4; // header, two borders and the footer
+const CHROME_ROWS_FORCED = 5; // plus the forced banner
 const BASE_KEYS = "↑↓ · Enter · Esc";
 
 export type StyleMenuColor = "accent" | "border" | "dim" | "muted" | "text" | "warning";
 
+/** Widest row text this registry renders, prefix included and origin only for custom styles. */
+function widestRowText(registry: StyleRegistry): number {
+  return registry.list().reduce((max, style) => {
+    const origin = style.source === "builtin" ? "" : ` ${style.source}`;
+    return Math.max(max, ROW_PREFIX_WIDTH + visibleWidth(style.name) + visibleWidth(origin));
+  }, 0);
+}
+
+/** Widest wrapper the theme puts around a row (accent for the cursor, muted while forced). */
+function themeWrapperWidth(theme: StyleMenuTheme | undefined): number {
+  if (!theme) {
+    return 0;
+  }
+  return Math.max(visibleWidth(theme.fg("accent", "")), visibleWidth(theme.fg("muted", "")));
+}
+
+/**
+ * List-zone width sized to the widest row as it renders, theme wrappers included, so the
+ * detail keeps the columns instead of reserving a fixed share of the terminal. Bounded by a
+ * floor and by 60% of the width.
+ */
+export function listZoneWidth(registry: StyleRegistry, width: number, theme?: StyleMenuTheme): number {
+  const ceiling = Math.floor(width * MAX_LIST_RATIO);
+  const widest = widestRowText(registry) + themeWrapperWidth(theme) + 2;
+  return Math.min(Math.max(MIN_LIST_WIDTH, widest), ceiling);
+}
+
 /** First rendered column of the detail zone in the two-zone layout. */
-export function detailZoneStart(width: number): number {
-  return Math.ceil(width * LIST_ZONE_RATIO) + ZONE_GAP;
+export function detailZoneStart(registry: StyleRegistry, width: number, theme?: StyleMenuTheme): number {
+  return listZoneWidth(registry, width, theme) + ZONE_GAP;
 }
 
 /** Structural subset of Pi's Theme used by the menu; the real theme is injected by the custom() callback. */
@@ -75,6 +109,8 @@ export class StyleMenu {
   };
   /** Wheel entry point: MouseRegion gives the whole menu a wheel consumer without changing its render. */
   private readonly mouseRegion: MouseRegion;
+  /** Description lines the collapsed layout can spare for the cursor row. */
+  private collapsedDescriptionLines = 0;
 
   constructor(private readonly options: StyleMenuOptions) {
     this.styles = options.registry.list();
@@ -147,12 +183,14 @@ export class StyleMenu {
     const box = new Box(0, 0);
     box.addChild(new DynamicBorder((text: string) => this.options.theme.fg("border", text)));
     if (force) {
-      const banner = `Forced by ${force.pluginId} — selection overridden`;
+      const banner = `Forced by ${force.pluginId} — selection overridden, Enter disabled`;
       box.addChild(new TruncatedText(this.options.theme.fg("warning", banner), 0, 0));
     }
-    // Fixed chrome: two borders, the optional banner and the footer. The two zones
-    // split whatever the height budget leaves, so the total never exceeds it.
-    const rowsBudget = Math.max(0, maxHeight - (force ? 4 : 3));
+    // The header names the dialog; the footer carries the keys and the active legend.
+    box.addChild(new TruncatedText(this.options.theme.fg("text", HEADER_TEXT), 0, 0));
+    // Fixed chrome: the header, two borders, the optional banner and the footer. The two
+    // zones split whatever the height budget leaves, so the total never exceeds it.
+    const rowsBudget = Math.max(0, maxHeight - (force ? CHROME_ROWS_FORCED : CHROME_ROWS));
     box.addChild(this.buildZones(width, rowsBudget));
     box.addChild(new TruncatedText(this.options.theme.fg("dim", this.footerText(collapsed)), 0, 0));
     box.addChild(new DynamicBorder((text: string) => this.options.theme.fg("border", text)));
@@ -165,11 +203,9 @@ export class StyleMenu {
   private buildZones(width: number, rowsBudget: number): Component {
     const collapsed = width < DETAIL_PANEL_MIN_WIDTH;
     if (collapsed) {
-      // No body on screen (status line and body have no room here): mirror that in the scroll state.
-      this.bodyScroll.updateLayout(0, 0, this.onBodyScroll);
-      return new VStack(this.rowComponents(this.collapsedRowWindow(width, rowsBudget), width));
+      return this.buildCollapsedZone(width, rowsBudget);
     }
-    const detailStart = detailZoneStart(width);
+    const detailStart = detailZoneStart(this.options.registry, width, this.options.theme);
     const listWidth = detailStart - ZONE_GAP;
     const detailWidth = width - detailStart;
     const style = this.styles[this.selectedIndex];
@@ -193,6 +229,26 @@ export class StyleMenu {
       ],
       { gap: ZONE_GAP },
     );
+  }
+
+  /**
+   * Collapsed mode keeps the cursor row's description inside the list zone and reserves the
+   * status line at the bottom while the budget can hold it, so the behaviour flags that make
+   * the styles different do not vanish on narrow terminals. There is no body here.
+   */
+  private buildCollapsedZone(width: number, rowsBudget: number): Component {
+    this.bodyScroll.updateLayout(0, 0, this.onBodyScroll);
+    const statusWrapped = wrapTextWithAnsi(
+      this.options.theme.fg("dim", this.statusText(this.styles[this.selectedIndex])),
+      width,
+    );
+    const keepsStatus = rowsBudget - statusWrapped.length >= 1;
+    const listBudget = keepsStatus ? rowsBudget - statusWrapped.length : rowsBudget;
+    const components = this.rowComponents(this.collapsedRowWindow(width, listBudget), width);
+    if (keepsStatus) {
+      components.push(new Text(statusWrapped.join("\n"), 0, 0));
+    }
+    return new VStack(components);
   }
 
   private bodyComponents(style: StyleDefinition, detailWidth: number): Component[] {
@@ -224,13 +280,19 @@ export class StyleMenu {
   }
 
   // Collapsed mode keeps the cursor row's description inside the list zone instead of
-  // silently dropping the right panel; the status line has no room and is omitted.
-  // The window grows around the cursor row until the budget runs out.
+  // silently dropping the right panel; the caller reserves the status line first and the
+  // window grows around the cursor row until the remaining budget runs out.
   private collapsedRowWindow(width: number, rowsBudget: number): number[] {
+    // The cursor row's description shares the list budget with the rows themselves; it is
+    // trimmed (never dropped whole) when the budget cannot hold it, so the collapsed block
+    // never renders more rows than it is given.
+    const activeDescription = wrapTextWithAnsi(
+      `  ${this.styles[this.selectedIndex].description}`,
+      width,
+    );
+    this.collapsedDescriptionLines = Math.min(activeDescription.length, Math.max(0, rowsBudget - 1));
     const heights = this.styles.map((style, index) =>
-      index === this.selectedIndex
-        ? 1 + wrapTextWithAnsi(`  ${style.description}`, width).length
-        : 1,
+      index === this.selectedIndex ? 1 + this.collapsedDescriptionLines : 1,
     );
     let start = this.selectedIndex;
     let end = this.selectedIndex;
@@ -254,8 +316,9 @@ export class StyleMenu {
     const collapsed = width < DETAIL_PANEL_MIN_WIDTH;
     return indices.flatMap((index) => {
       const components: Component[] = [new TruncatedText(this.rowText(index), 0, 0)];
-      if (collapsed && index === this.selectedIndex) {
-        components.push(new Text(`  ${this.styles[index].description}`, 0, 0));
+      if (collapsed && index === this.selectedIndex && this.collapsedDescriptionLines > 0) {
+        const description = wrapTextWithAnsi(`  ${this.styles[index].description}`, width);
+        components.push(new Text(description.slice(0, this.collapsedDescriptionLines).join("\n"), 0, 0));
       }
       return components;
     });
@@ -279,7 +342,8 @@ export class StyleMenu {
 
   /** Scroll keys mirror Pi's defaults: pageUp/pageDown for dialogs, home/end for the viewport. */
   private footerText(collapsed: boolean): string {
-    return collapsed ? BASE_KEYS : `${BASE_KEYS} · PgUp/PgDn · Home/End scroll the body`;
+    const keys = collapsed ? BASE_KEYS : `${BASE_KEYS} · PgUp/PgDn · Home/End scroll the body`;
+    return `${keys} · * active`;
   }
 
   private statusText(style: StyleDefinition): string {
@@ -296,9 +360,13 @@ export class StyleMenu {
 
   private rowText(index: number): string {
     const style = this.styles[index];
-    const marker = style.id === this.options.activeStyleId ? "*" : " ";
-    const origin = style.source === "builtin" ? "built-in" : style.source;
-    const row = `${marker} ${style.name} ${origin}`;
+    // Two fixed glyph columns: the cursor is the row the keys act on, the star is the
+    // persisted style. Neither relies on colour, so both survive monochrome terminals
+    // and the muted rows of a forced style.
+    const cursor = index === this.selectedIndex ? ">" : " ";
+    const active = style.id === this.options.activeStyleId ? "*" : " ";
+    const origin = style.source === "builtin" ? "" : ` ${style.source}`;
+    const row = `${cursor} ${active} ${style.name}${origin}`;
     if (this.options.getForce?.()) {
       return this.options.theme.fg("muted", row);
     }

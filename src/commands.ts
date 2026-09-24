@@ -66,15 +66,17 @@ export function registerOutputStyleCommand(
           // the editor container, the same place as Pi's own dialogs (ui.select and the
           // model picker), and restores the editor on close. Natural height is one row
           // per style plus one spare row for the detail zone and the menu chrome
-          // (two borders and the footer), capped to fit the screen.
-          const naturalHeight = registry.list().length + 4;
+          // (header, two borders and the footer), capped to fit the screen.
+          const naturalHeight = registry.list().length + 5;
           const chosenId = await ctx.ui.custom<string | null>((tui, theme, _keybindings, done) =>
             new StyleMenu({
               registry,
               theme,
               activeStyleId: getActiveStyle(registry, state).id,
               getForce: activeForce,
-              maxHeight: () => Math.min(naturalHeight, Math.max(4, tui.terminal.rows - 2)),
+              // Floor of 8 rows: below that the dialog cannot honour its own row budget
+              // (header, two borders, footer, description and the status line).
+              maxHeight: () => Math.min(naturalHeight, Math.max(8, tui.terminal.rows - 2)),
               done,
               requestRender: () => tui.requestRender(),
             }),

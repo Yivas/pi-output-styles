@@ -4,9 +4,13 @@ All notable changes to `pi-output-styles` are documented here.
 
 ## Unreleased
 
+### Changed
+
+- The `/output-style` menu is easier to read and to navigate: rows carry a `>` cursor glyph and a `*` active glyph that do not depend on colour (visible in monochrome terminals and while a plugin forces a style), the header names the dialog (`Select an output style`) and the footer explains the active glyph, the list column is sized to its content instead of a fixed 40% and shows the origin only for custom styles, the metadata line (`turn reminder`, `keep-coding`, `from <path>`) stays visible below 80 columns while the row budget allows it, and the forced banner now states that Enter is disabled.
+
 ### Fixed
 
-- The compatibility document now describes the style menu as the native dialog slot delivered in `0.5.2`, replacing the overlay implementation it superseded, and records the small-terminal row-cap behaviour.
+- The compatibility document now describes the style menu as the native dialog slot delivered in `0.5.2`, replacing the overlay implementation it superseded, and records the small-terminal row-cap behaviour and the eight-row floor of the menu's height budget.
 
 ## [0.5.2] - 2026-09-24
 

@@ -4,6 +4,7 @@ import type { TuiMouseEvent } from "@earendil-works/pi-tui";
 import {
   StyleMenu,
   detailZoneStart,
+  listZoneWidth,
   type StyleMenuForce,
   type StyleMenuTheme,
 } from "../../src/ui/style-menu.js";
@@ -26,10 +27,11 @@ function renderedWidth(line: string): number {
 
 // Detail-zone text with terminal sequences and theme tags removed, split into
 // tokens, so wrapped body fragments can be matched back against the source
-// instructions verbatim. Only the detail column is taken: the list zone shares
-// the same rendered rows.
+// instructions verbatim. The slice starts from the built-in layout, whose rows are
+// one column narrower than a registry with a longer custom row; that column falls
+// inside the two-column gap between the zones, so token matching is unaffected.
 function detailTokens(lines: string[], width: number): string[] {
-  const start = detailZoneStart(width);
+  const start = detailZoneStart(createBuiltinRegistry(), width, fakeTheme());
   const detail = lines.map((line) => sliceByColumn(line, start, width - start)).join("\n");
   return stripTerminalSequences(detail)
     .replace(/\[(?:accent|border|dim|muted|text|warning)\]|\[\/\]/g, "")
@@ -136,37 +138,38 @@ describe("StyleMenu detail panel", () => {
     expect(output).toContain("turn reminder: yes");
     expect(output).toContain("waiting reminder: unavailable (Pi)");
     expect(output).toContain("keep-coding: on");
-    expect(output).toContain("from .pi/output-styles/team.md");
+    expect(output).toContain(".pi/output-styles/team.md");
   });
 });
 
 describe("StyleMenu list rows", () => {
-  it("renders the built-in rows with the active marker and origin", () => {
+  it("renders the built-in rows with the cursor and active glyphs and no origin", () => {
     const lines = createMenu(createBuiltinRegistry()).render(120);
     const output = lines.join("\n");
 
-    expect(output).toContain("* default built-in");
-    expect(output).toContain("  Proactive built-in");
-    expect(output).toContain("  Concise built-in");
-    expect(output).toContain("  Explanatory built-in");
-    expect(output).toContain("  Learning built-in");
-    expect(output).not.toContain("* Concise");
+    expect(output).toContain("> * default");
+    expect(output).toContain("    Proactive");
+    expect(output).toContain("    Concise");
+    expect(output).toContain("    Explanatory");
+    expect(output).toContain("    Learning");
+    expect(output).not.toContain("built-in");
+    expect(output).not.toContain("> * Concise");
   });
 
   it("marks the persisted active style instead of the first row", () => {
     const lines = createMenu(createBuiltinRegistry(), { activeStyleId: "concise" }).render(120);
     const output = lines.join("\n");
 
-    expect(output).toContain("* Concise built-in");
-    expect(output).toContain("  default built-in");
+    expect(output).toContain("> * Concise");
+    expect(output).toContain("    default");
   });
 
   it("shows the user and project origins for custom styles", () => {
     const lines = createMenu(mixedRegistry()).render(120);
     const output = lines.join("\n");
 
-    expect(output).toContain("  User Style user");
-    expect(output).toContain("  Project Style project");
+    expect(output).toContain("    User Style user");
+    expect(output).toContain("    Project Style project");
   });
 
   it.each([40, 79, 80, 120])("keeps every rendered line within width %i", (width) => {
@@ -221,13 +224,11 @@ describe("StyleMenu forced state", () => {
     const lines = menu.render(120);
     const output = lines.join("\n");
 
-    expect(output).toContain("Forced by plugin-a — selection overridden");
+    expect(output).toContain("Forced by plugin-a — selection overridden, Enter disabled");
     expect(output).not.toContain("[accent]");
-    for (const line of lines) {
-      if (line.includes("built-in")) {
-        expect(line).toContain("[muted]");
-      }
-    }
+    // The cursor keeps a textual glyph of its own while every row is muted.
+    expect(output).toContain("[muted]> * default[/]");
+    expect(output).toContain("[muted]    Proactive[/]");
   });
 
   it("keeps every banner line within the render width", () => {
@@ -251,7 +252,7 @@ describe("StyleMenu forced state", () => {
 
     const output = menu.render(120).join("\n");
     expect(output).not.toContain("Forced by");
-    expect(output).toContain("[accent]  Proactive built-in[/]");
+    expect(output).toContain("[accent]>   Proactive[/]");
   });
 
   it("keeps Enter inert while forced and applies it again after release", () => {
@@ -272,7 +273,7 @@ describe("StyleMenu forced state", () => {
     const output = menu.render(120).join("\n");
 
     expect(output).not.toContain("Forced by");
-    expect(output).toContain("[accent]* default built-in[/]");
+    expect(output).toContain("[accent]> * default[/]");
   });
 });
 
@@ -282,7 +283,7 @@ describe("StyleMenu responsive layout", () => {
     const output = lines.join("\n");
 
     expect(output).toContain("Answer with the result first, without preamble or narration.");
-    expect(output).not.toContain("turn reminder");
+    expect(output).toContain("turn reminder: yes");
     expect(output).not.toContain("Act immediately");
     expect(output).not.toContain("Stop and ask the human");
     for (const line of lines) {
@@ -326,20 +327,20 @@ describe("StyleMenu keyboard", () => {
     expect(requestRender).toHaveBeenCalledTimes(2);
     const moved = menu.render(120).join("\n");
     expect(moved).toContain("Act immediately, keep interruptions to a minimum");
-    expect(moved).toContain("[accent]  Proactive built-in[/]");
+    expect(moved).toContain("[accent]>   Proactive[/]");
     expect(moved).not.toContain("Use Pi's normal response behavior");
 
     for (let step = 0; step < 10; step += 1) {
       menu.handleInput("\x1b[B");
     }
     const atBottom = menu.render(120).join("\n");
-    expect(atBottom).toContain("[accent]  ELI5 built-in[/]");
+    expect(atBottom).toContain("[accent]>   ELI5[/]");
     expect(atBottom).toContain("Plain short words for a tired reader");
 
     for (let step = 0; step < 10; step += 1) {
       menu.handleInput("\x1b[A");
     }
-    expect(menu.render(120).join("\n")).toContain("[accent]* default built-in[/]");
+    expect(menu.render(120).join("\n")).toContain("[accent]> * default[/]");
     expect(requestRender).toHaveBeenCalledTimes(22);
   });
 
@@ -434,6 +435,72 @@ describe("StyleMenu instructions body", () => {
         expect(renderedWidth(line)).toBeLessThanOrEqual(width);
       }
     }
+  });
+});
+
+describe("StyleMenu chrome, sizing and collapsed status", () => {
+  it("opens with a header line and a footer legend for the active glyph", () => {
+    const lines = createMenu(createBuiltinRegistry()).render(120);
+
+    expect(lines[1]).toContain("Select an output style");
+    expect(lines.join("\n")).toContain("* active");
+
+    const collapsed = createMenu(createBuiltinRegistry()).render(79).join("\n");
+    expect(collapsed).toContain("Select an output style");
+    expect(collapsed).toContain("* active");
+  });
+
+  it("renders one row per style plus header, borders and footer", () => {
+    const styles = createBuiltinRegistry().list().length;
+
+    expect(createMenu(createBuiltinRegistry()).render(120).length).toBe(styles + 4);
+  });
+
+  it("sizes the list zone to its content with a floor and a ceiling", () => {
+    // Prefix plus the widest built-in name plus the two-column separator.
+    expect(listZoneWidth(createBuiltinRegistry(), 120)).toBe(20);
+    expect(detailZoneStart(createBuiltinRegistry(), 120)).toBe(22);
+
+    const shortRegistry: StyleRegistry = {
+      list: () => [customStyle({ id: "a", name: "A", source: "builtin" })],
+      resolve: () => undefined,
+    };
+    expect(listZoneWidth(shortRegistry, 120)).toBe(18);
+
+    const longName = customStyle({ id: "long", name: "A".repeat(80), source: "user" });
+    const registry = mergeStyleSources(createBuiltinRegistry(), [longName], []).registry;
+    expect(listZoneWidth(registry, 120)).toBe(72);
+  });
+
+  it("keeps the behaviour flags visible below 80 columns", () => {
+    const registry = mergeStyleSources(
+      createBuiltinRegistry(),
+      [
+        customStyle({
+          id: "team",
+          name: "Team",
+          source: "user",
+          filePath: ".pi/output-styles/team.md",
+          turnReminder: "Keep the team voice.",
+        }),
+      ],
+      [],
+    ).registry;
+    const output = createMenu(registry, { activeStyleId: "team" }).render(79).join("\n");
+
+    expect(output).toContain("turn reminder: yes");
+    expect(output).toContain("keep-coding: on");
+    expect(output).toContain("from .pi/output-styles/team.md");
+  });
+
+  it("drops the collapsed status line when the budget cannot hold it", () => {
+    const lines = createMenu(createBuiltinRegistry(), {
+      activeStyleId: "concise",
+      maxHeight: () => 5,
+    }).render(79);
+
+    expect(lines.join("\n")).not.toContain("turn reminder");
+    expect(lines.length).toBeLessThanOrEqual(5);
   });
 });
 
@@ -543,7 +610,7 @@ describe("StyleMenu height budget and scrolling", () => {
 
     expect(lines.length).toBeLessThanOrEqual(budget);
     expect(lines.join("\n")).toContain("↑↓ · Enter · Esc");
-    expect(lines.join("\n")).not.toContain("turn reminder");
+    expect(lines.join("\n")).toContain("turn reminder");
     for (const line of lines) {
       expect(renderedWidth(line)).toBeLessThanOrEqual(width);
     }
@@ -595,7 +662,7 @@ describe("StyleMenu height budget and scrolling", () => {
     menu.handleInput("\x1b[6~");
     menu.handleInput("\x1b[F");
 
-    expect(menu.render(80).join("\n")).toContain("* Body Style user");
+    expect(menu.render(80).join("\n")).toContain("> * Body Style user");
   });
 
   it("starts the next style's body from the top after scrolling and moving the cursor", () => {

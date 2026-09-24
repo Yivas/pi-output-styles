@@ -181,8 +181,27 @@ describe("/output-style menu guards", () => {
 
     // No overlay options at all: the component goes to the same slot as Pi's own dialogs.
     expect(custom.mock.calls[0]?.[1]).toBeUndefined();
-    // Natural dialog height: one row per style plus borders and footer, not the terminal height.
-    expect(renderedHeight).toBe(createBuiltinRegistry().list().length + 3);
+    // Natural dialog height: one row per style plus header, borders and footer, not the terminal height.
+    expect(renderedHeight).toBe(createBuiltinRegistry().list().length + 4);
+  });
+
+  it("keeps every style row visible under a forced style within the natural budget", async () => {
+    const controller = new ForcedStyleController(createBuiltinRegistry());
+    controller.force("plugin-a", "concise");
+    const { command } = registerCommand(undefined, () => controller.activeForce());
+    let rendered = "";
+    const custom = vi.fn(async (factory: MenuFactory) => {
+      const component = factory({ requestRender: vi.fn(), terminal: { rows: 40 } }, fakeTheme(), {}, () => null);
+      rendered = component.render(120).join("\n");
+      return null;
+    });
+    const { context } = menuContext("tui", custom);
+
+    await command.handler("", context);
+
+    // Banner plus header plus every style row plus two borders and the footer: the +5 budget.
+    expect(rendered.split("\n").length).toBe(createBuiltinRegistry().list().length + 5);
+    expect(rendered).toContain("Forced by plugin-a");
   });
 
   it.each(["rpc", "print", "json"])("keeps the text listing in %s mode", async (mode) => {
@@ -277,7 +296,7 @@ describe("/output-style menu guards", () => {
 
     await command.handler("", context);
 
-    expect(rendered).toContain("* default built-in");
+    expect(rendered).toContain("> * default");
     expect(rendered).not.toContain("* Proactive");
   });
 
