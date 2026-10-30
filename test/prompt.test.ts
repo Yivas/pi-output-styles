@@ -15,6 +15,7 @@ import { BASE_CODING_INSTRUCTIONS } from "../src/styles/coding-instructions.js";
 import { parseStyleFile } from "../src/styles/parser.js";
 import { createBuiltinRegistry } from "../src/styles/registry.js";
 import type { StyleDefinition } from "../src/styles/types.js";
+import { buildSystemPrompt, createPromptEvent } from "./fixtures/prompt-event.js";
 
 const fixturesDirectory = fileURLToPath(new URL("fixtures/styles/", import.meta.url));
 
@@ -125,19 +126,20 @@ describe("registerSystemPromptHook", () => {
     expect(registrations).toEqual(["before_agent_start"]);
     expect(handler).toBeDefined();
 
-    const result = await handler?.(
-      {
-        type: "before_agent_start",
-        prompt: "User request",
-        systemPrompt: "Native instructions\n\nEarlier extension instructions",
-        systemPromptOptions: {} as BeforeAgentStartEvent["systemPromptOptions"],
-      },
-      {} as ExtensionContext,
-    );
-
-    expect(result).toEqual({
-      systemPrompt:
-        `Native instructions\n\nEarlier extension instructions\n\n## Coding instructions\n\n${BASE_CODING_INSTRUCTIONS}\n\n## Output style: Concise\n\nPut the result first and keep the response compact.`,
+    const event = createPromptEvent("Native instructions\n\nEarlier extension instructions", {
+      sections: { another_extension: "Preserve this section" },
     });
+    const result = await handler?.(event, {} as ExtensionContext);
+
+    expect(result).toBeUndefined();
+    expect(event.systemPromptOptions.forceSystemPrompt).toBeUndefined();
+    expect(event.systemPromptOptions.sections).toEqual({
+      another_extension: "Preserve this section",
+      pi_output_styles_coding: `## Coding instructions\n\n${BASE_CODING_INSTRUCTIONS}`,
+      pi_output_styles_style: "## Output style: Concise\n\nPut the result first and keep the response compact.",
+    });
+    expect(buildSystemPrompt(event.systemPromptOptions)).toContain(
+      "Native instructions\n\nEarlier extension instructions",
+    );
   });
 });

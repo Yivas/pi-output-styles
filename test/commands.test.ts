@@ -1,5 +1,4 @@
 import type {
-  BeforeAgentStartEvent,
   ExtensionAPI,
   ExtensionCommandContext,
   RegisteredCommand,
@@ -13,6 +12,7 @@ import { createBuiltinRegistry } from "../src/styles/registry.js";
 import { mergeStyleSources } from "../src/styles/merge.js";
 import { ForcedStyleController } from "../src/styles/forced.js";
 import type { StyleMenuTheme } from "../src/ui/style-menu.js";
+import { createPromptEvent } from "./fixtures/prompt-event.js";
 
 const esc = String.fromCharCode(27);
 
@@ -97,18 +97,10 @@ describe("/output-style", () => {
     expect(state.getSelected()).toBe("concise");
     expect(notify).toHaveBeenLastCalledWith("Output style selected: Concise", "info");
 
-    const result = await promptHandler(
-      {
-        type: "before_agent_start",
-        prompt: "Continue",
-        systemPrompt: "Native instructions",
-        systemPromptOptions: {},
-      } as BeforeAgentStartEvent,
-      {} as never,
-    );
-    expect(result).toEqual({
-      systemPrompt: expect.stringContaining("## Output style: Concise"),
-    });
+    const event = createPromptEvent("Native instructions");
+    const result = await promptHandler(event, {} as never);
+    expect(result).toBeUndefined();
+    expect(event.systemPromptOptions.sections.pi_output_styles_style).toContain("## Output style: Concise");
   });
 
   it("persists the selection even while a plugin forces another style", async () => {

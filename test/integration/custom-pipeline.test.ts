@@ -23,6 +23,7 @@ import { discoverStyleFiles } from "../../src/styles/discovery.js";
 import { loadCustomStyles } from "../../src/styles/custom-loader.js";
 import { mergeStyleSources } from "../../src/styles/merge.js";
 import { createBuiltinRegistry } from "../../src/styles/registry.js";
+import { createPromptEvent } from "../fixtures/prompt-event.js";
 
 type RegisteredHandler = (event: unknown, context: unknown) => unknown;
 
@@ -120,25 +121,17 @@ describe("custom style pipeline", () => {
     expect(listing).not.toContain("User Concise");
     expect(listing).not.toContain("Ignored Style");
 
-    const restored = await extensionApi.handlers.get("before_agent_start")?.({
-      systemPrompt: "Native instructions",
-    }, {});
-    expect(restored).toEqual({
-      systemPrompt: expect.stringContaining("Project collision body."),
-    });
-    expect(restored).toEqual({
-      systemPrompt: expect.not.stringContaining("User collision body."),
-    });
+    const restored = createPromptEvent("Native instructions");
+    expect(await extensionApi.handlers.get("before_agent_start")?.(restored, {})).toBeUndefined();
+    expect(restored.systemPrompt).toContain("Project collision body.");
+    expect(restored.systemPrompt).not.toContain("User collision body.");
 
     await command?.handler("UserOnly", commandContext(notify));
     await expect(readFile(join(agentDirectory, "pi-output-styles.selection.json"), "utf8"))
       .resolves.toContain('"selectedStyle": "useronly"');
-    const changed = await extensionApi.handlers.get("before_agent_start")?.({
-      systemPrompt: "Native instructions",
-    }, {});
-    expect(changed).toEqual({
-      systemPrompt: expect.stringContaining("User-only body."),
-    });
+    const changed = createPromptEvent("Native instructions");
+    await extensionApi.handlers.get("before_agent_start")?.(changed, {});
+    expect(changed.systemPrompt).toContain("User-only body.");
   });
 
   it("applies the first valid force to the merged custom registry and restores selection after release", async () => {
@@ -163,11 +156,10 @@ describe("custom style pipeline", () => {
 
     const first = controller.force("plugin-a", "projectonly");
     controller.force("plugin-b", "useronly");
-    const forced = await handlers.get("before_agent_start")?.({ systemPrompt: "Native instructions" }, {});
+    const forced = createPromptEvent("Native instructions");
+    await handlers.get("before_agent_start")?.(forced, {});
 
-    expect(forced).toEqual({
-      systemPrompt: expect.stringContaining("Project-only body."),
-    });
+    expect(forced.systemPrompt).toContain("Project-only body.");
     expect(warning).toHaveBeenCalledWith(expect.objectContaining({
       code: "force-conflict",
       firstPluginId: "plugin-a",
@@ -175,9 +167,8 @@ describe("custom style pipeline", () => {
     }));
 
     first.release();
-    const restored = await handlers.get("before_agent_start")?.({ systemPrompt: "Native instructions" }, {});
-    expect(restored).toEqual({
-      systemPrompt: expect.stringContaining("User-only body."),
-    });
+    const restored = createPromptEvent("Native instructions");
+    await handlers.get("before_agent_start")?.(restored, {});
+    expect(restored.systemPrompt).toContain("User-only body.");
   });
 });

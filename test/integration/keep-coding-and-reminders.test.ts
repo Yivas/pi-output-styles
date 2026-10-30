@@ -5,6 +5,7 @@ import { vi, afterEach, describe, expect, it } from "vitest";
 import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 import { createEventBus } from "@earendil-works/pi-coding-agent";
 import { BASE_CODING_INSTRUCTIONS } from "../../src/styles/coding-instructions.js";
+import { createPromptEvent } from "../fixtures/prompt-event.js";
 import type { StyleDefinition, StyleRegistry } from "../../src/styles/types.js";
 
 const mockedAgentDirectory = vi.hoisted(() => ({ path: "" }));
@@ -85,8 +86,9 @@ function commandContext(notify = vi.fn()): ExtensionCommandContext {
 
 async function emitPrompt(harness: ExtensionHarness, systemPrompt: string): Promise<string> {
   const handlers = harness.handlers.get("before_agent_start") ?? [];
-  const result = await handlers[0]?.({ systemPrompt }, {});
-  return (result as { systemPrompt?: string } | undefined)?.systemPrompt ?? systemPrompt;
+  const event = createPromptEvent(systemPrompt);
+  await handlers[0]?.(event, {});
+  return event.systemPrompt;
 }
 
 async function emitTurn(harness: ExtensionHarness, notify: (message: string) => void, turnIndex: number): Promise<void> {

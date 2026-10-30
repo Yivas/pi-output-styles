@@ -17,6 +17,7 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 import { createEventBus } from "@earendil-works/pi-coding-agent";
 import extension from "../../src/extension.js";
+import { createPromptEvent } from "../fixtures/prompt-event.js";
 
 const temporaryDirectories: string[] = [];
 let cwdSpy: ReturnType<typeof vi.spyOn> | undefined;
@@ -87,15 +88,9 @@ describe("custom style selection", () => {
     expect(notify.mock.calls[0]?.[0]).toMatch(/User Style.*user/i);
 
     await command?.handler("Project", commandContext(notify));
-    const result = await extensionApi.handlers.get("before_agent_start")?.({
-      systemPrompt: "Native instructions",
-    }, {});
-
-    expect(result).toEqual({
-      systemPrompt: expect.stringContaining("## Output style: Project Style"),
-    });
-    expect(result).toEqual({
-      systemPrompt: expect.stringContaining("Use project response guidance."),
-    });
+    const event = createPromptEvent("Native instructions");
+    expect(await extensionApi.handlers.get("before_agent_start")?.(event, {})).toBeUndefined();
+    expect(event.systemPrompt).toContain("## Output style: Project Style");
+    expect(event.systemPrompt).toContain("Use project response guidance.");
   });
 });

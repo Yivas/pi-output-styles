@@ -1,10 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import type { BeforeAgentStartEvent, ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import { createPromptEvent } from "../fixtures/prompt-event.js";
 import { registerSystemPromptHook } from "../../src/prompt.js";
 import { ForcedStyleController } from "../../src/styles/forced.js";
 import { createBuiltinRegistry } from "../../src/styles/registry.js";
 
-type RegisteredHandler = (event: { systemPrompt: string }, context: unknown) => unknown;
+type RegisteredHandler = (event: BeforeAgentStartEvent, context: unknown) => unknown;
 
 function createPromptApi() {
   let handler: RegisteredHandler | undefined;
@@ -30,16 +31,17 @@ describe("forced style prompt integration", () => {
 
     const beforeAgentStart = api.getPrompt();
     expect(beforeAgentStart).toBeDefined();
-    const normal = beforeAgentStart?.({ systemPrompt: "Native instructions" }, {});
-    expect(normal).toEqual({ systemPrompt: "Native instructions" });
+    const event = createPromptEvent("Native instructions");
+    expect(beforeAgentStart?.(event, {})).toBeUndefined();
+    expect(event.systemPromptOptions.sections).toEqual({});
 
     const force = controller.force("plugin-a", "concise");
-    const forced = beforeAgentStart?.({ systemPrompt: "Native instructions" }, {});
-    expect(forced).toEqual({ systemPrompt: expect.stringContaining("## Output style: Concise") });
+    expect(beforeAgentStart?.(event, {})).toBeUndefined();
+    expect(event.systemPromptOptions.sections.pi_output_styles_style).toContain("## Output style: Concise");
 
     force.release();
-    const restored = beforeAgentStart?.({ systemPrompt: "Native instructions" }, {});
-    expect(restored).toEqual({ systemPrompt: "Native instructions" });
+    expect(beforeAgentStart?.(event, {})).toBeUndefined();
+    expect(event.systemPromptOptions.sections).toEqual({});
     expect(warning).not.toHaveBeenCalled();
   });
 });

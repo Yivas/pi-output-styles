@@ -36,6 +36,18 @@ export function registerSystemPromptHook(
 ): void {
   pi.on("before_agent_start", (event) => {
     const style = resolveActiveStyle(registry, getSelected(), onWarning);
-    return { systemPrompt: composeStylePrompt(event.systemPrompt, style, BASE_CODING_INSTRUCTIONS) };
+    const { sections, forceSystemPrompt } = event.systemPromptOptions;
+    if (forceSystemPrompt !== undefined) {
+      return { systemPrompt: composeStylePrompt(event.systemPrompt, style, BASE_CODING_INSTRUCTIONS) };
+    }
+
+    delete sections.pi_output_styles_coding;
+    delete sections.pi_output_styles_style;
+    if (style.keepCodingInstructions && BASE_CODING_INSTRUCTIONS.length > 0) {
+      sections.pi_output_styles_coding = `## Coding instructions\n\n${BASE_CODING_INSTRUCTIONS}`;
+    }
+    if (style.instructions.length > 0) {
+      sections.pi_output_styles_style = `## Output style: ${style.name}\n\n${style.instructions}`;
+    }
   });
 }

@@ -16,6 +16,8 @@ import {
   type ModelRuntime,
 } from "@earendil-works/pi-coding-agent";
 
+import { buildSystemPrompt } from "../fixtures/prompt-event.js";
+
 const originalAgentDirectory = process.env.PI_CODING_AGENT_DIR;
 const temporaryDirectories: string[] = [];
 
@@ -117,7 +119,8 @@ async function loadWithProbe(providerFirst: boolean) {
   const readPrompt = async (): Promise<string | undefined> => {
     const promptOptions: BuildSystemPromptOptions = { cwd, customPrompt: "Native instructions" };
     const result = await runner.emitBeforeAgentStart("probe", undefined, promptOptions);
-    return result.systemPromptOptions.forceSystemPrompt;
+    expect(result.systemPromptOptions.forceSystemPrompt).toBeUndefined();
+    return buildSystemPrompt(result.systemPromptOptions);
   };
   return { runner, notifications, readPrompt };
 }

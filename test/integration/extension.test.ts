@@ -12,6 +12,7 @@ vi.mock("@earendil-works/pi-coding-agent", async (importOriginal) => {
 });
 
 import extension from "../../src/extension.js";
+import { buildSystemPrompt, createPromptEvent } from "../fixtures/prompt-event.js";
 import { STYLE_CONTROLLER_CHANNEL, STYLE_CONTROLLER_REQUEST_CHANNEL } from "../../src/interop.js";
 import { ForcedStyleController } from "../../src/styles/forced.js";
 import {
@@ -82,28 +83,20 @@ describe("extension factory", () => {
     const firstCommand = first.commands.get("output-style");
     expect(firstCommand).toBeDefined();
 
-    const initial = await first.handlers.get("before_agent_start")?.({
-      systemPrompt: "Native instructions",
-    }, {});
-    expect(initial).toEqual({
-      systemPrompt: "Native instructions",
-    });
+    const initial = createPromptEvent("Native instructions");
+    await first.handlers.get("before_agent_start")?.(initial, {});
+    expect(initial.systemPromptOptions.sections).toEqual({});
+    expect(initial.systemPrompt).toContain("Native instructions");
 
     await firstCommand?.handler("Concise", commandContext());
-    const changed = await first.handlers.get("before_agent_start")?.({
-      systemPrompt: "Native instructions",
-    }, {});
-    expect(changed).toEqual({
-      systemPrompt: expect.stringContaining("## Output style: Concise"),
-    });
+    const changed = createPromptEvent("Native instructions");
+    await first.handlers.get("before_agent_start")?.(changed, {});
+    expect(changed.systemPrompt).toContain("## Output style: Concise");
 
     const restarted = await startExtension(agentDirectory);
-    const restored = await restarted.handlers.get("before_agent_start")?.({
-      systemPrompt: "Native instructions",
-    }, {});
-    expect(restored).toEqual({
-      systemPrompt: expect.stringContaining("## Output style: Concise"),
-    });
+    const restored = createPromptEvent("Native instructions");
+    await restarted.handlers.get("before_agent_start")?.(restored, {});
+    expect(restored.systemPrompt).toBe(changed.systemPrompt);
   });
 
   it("runs the factory through Pi's real ExtensionRunner", async () => {
@@ -166,8 +159,9 @@ describe("extension factory", () => {
 
     const promptOptions: BuildSystemPromptOptions = { cwd, customPrompt: "Native instructions" };
     const result = await runner.emitBeforeAgentStart("probe", undefined, promptOptions);
-    expect(result.systemPromptOptions.forceSystemPrompt).toContain("Native instructions");
-    expect(result.systemPromptOptions.forceSystemPrompt).toContain("## Output style: Concise");
+    expect(result.systemPromptOptions.forceSystemPrompt).toBeUndefined();
+    expect(buildSystemPrompt(result.systemPromptOptions)).toContain("Native instructions");
+    expect(buildSystemPrompt(result.systemPromptOptions)).toContain("## Output style: Concise");
   });
 
   it("falls back to default and reports a visible error when persistence cannot be read or written", async () => {
@@ -182,23 +176,18 @@ describe("extension factory", () => {
     await extensionApi.handlers.get("session_start")?.({}, { hasUI: true, ui: { notify } });
 
     expect(notify).toHaveBeenCalledWith(expect.stringMatching(/Could not read selection file/i), "error");
-    const beforeWrite = await extensionApi.handlers.get("before_agent_start")?.({
-      systemPrompt: "Native instructions",
-    }, {});
-    expect(beforeWrite).toEqual({
-      systemPrompt: "Native instructions",
-    });
+    const beforeWrite = createPromptEvent("Native instructions");
+    await extensionApi.handlers.get("before_agent_start")?.(beforeWrite, {});
+    expect(beforeWrite.systemPromptOptions.sections).toEqual({});
 
     const command = extensionApi.commands.get("output-style");
     await command?.handler("Concise", commandContext(notify));
 
     expect(notify).toHaveBeenCalledWith(expect.stringMatching(/Could not persist output style/i), "error");
-    const afterWrite = await extensionApi.handlers.get("before_agent_start")?.({
-      systemPrompt: "Native instructions",
-    }, {});
-    expect(afterWrite).toEqual({
-      systemPrompt: "Native instructions",
-    });
+    const afterWrite = createPromptEvent("Native instructions");
+    await extensionApi.handlers.get("before_agent_start")?.(afterWrite, {});
+    expect(afterWrite.systemPrompt).toBe(beforeWrite.systemPrompt);
+    expect(afterWrite.systemPromptOptions.sections).toEqual({});
   });
 });
 
