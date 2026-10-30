@@ -4,6 +4,8 @@ All notable changes to `pi-output-styles` are documented here.
 
 ## Unreleased
 
+## [0.6.3] - 2026-10-30
+
 ### Fixed
 
 - Active styles now use Pi's structured prompt sections instead of replacing the complete system prompt. On transports that support mid-conversation updates, activating a tool no longer makes this extension rewrite the leading prompt and tool declarations. If another extension forces a complete prompt, the fallback preserves the style but cannot preserve the cached prefix.

@@ -1,4 +1,4 @@
-`pi-output-styles` is open source collaborative software. The repository contains an executable extension, published as release `v0.6.2` on GitHub and as the npm package `pi-response-styles` version `0.6.2`. The verified Pi compatibility baseline is `0.87.0`; other Pi versions have not been run.
+`pi-output-styles` is open source collaborative software. The repository contains an executable extension, version `0.6.3`, distributed as the npm package `pi-response-styles` and through GitHub Releases. The full-suite Pi compatibility baseline is `0.87.0`; the prompt path is additionally checked on `1.4.0`, not the full extension.
 
 ## What we accept
 
@@ -19,7 +19,7 @@ For every contribution, use the channel that matches the work:
 
 - Search existing issues before opening a new one.
 - Keep reports and changes limited to this project's scope: selecting and applying response-style instructions in Pi. The extension does not change the model, provider, reasoning, or permissions.
-- Pi `0.87.0` is the only compatibility baseline verified by the repository checks. Do not assume or report compatibility with other Pi versions without testing it.
+- Pi `0.87.0` is the full-suite compatibility baseline. The additional `1.4.0` prompt probe is scoped to that path; do not assume or report broader compatibility without testing it.
 - Describe the smallest useful reproduction when software is involved. Include the expected and observed behavior, the tested version or commit, and the host environment.
 - Remove credentials, tokens, private prompts, personal or repository identifiers, private configuration, and logs before submitting anything. Do not attach unredacted user or project content.
 

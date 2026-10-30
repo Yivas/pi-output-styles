@@ -5,23 +5,23 @@ The compatibility statements in this document are limited to the Pi installation
 ## Checked baseline
 
 - Pi package: local dependency `@earendil-works/pi-coding-agent` `0.87.0` (the API probe pins `PI_PACKAGE_DIR` to this dependency so an unrelated global Pi installation cannot change the observed version)
-- Node.js: the release baseline used `v24.9.0`; the unreleased prompt-section checks below ran on `v24.22.1`
-- Package status: `pi-response-styles` `0.6.2` published on GitHub Releases as `v0.6.2` and on npm as `pi-response-styles@0.6.2`; compatibility verified against Pi `0.87.0` only; `waitingTurnReminder` blocked (FAIL-CLOSED); cross-plugin force delivery through `pi.events` covered by local integration tests
+- Node.js: the original release baseline used `v24.9.0`; the `0.6.3` checks below ran on `v24.22.1`
+- Package version: `pi-response-styles` `0.6.3`; full-suite compatibility baseline Pi `0.87.0`, with the prompt path additionally checked on `1.4.0`; `waitingTurnReminder` blocked (FAIL-CLOSED); cross-plugin force delivery through `pi.events` covered by local integration tests
 
 ## Observed extension API
 
 The local Pi types, documentation, and a no-network extension runner probe verified:
 
-- `before_agent_start`: exposes mutable `systemPromptOptions.sections` and a `systemPrompt` getter that renders the current options. The unreleased source writes its own sections without returning `systemPrompt` unless a prior handler has already set `forceSystemPrompt`.
+- `before_agent_start`: exposes mutable `systemPromptOptions.sections` and a `systemPrompt` getter that renders the current options. This version writes its own sections without returning `systemPrompt` unless a prior handler has already set `forceSystemPrompt`.
 - `registerCommand`: registers `/output-style` and works with non-UI contexts.
 - `ctx.getSystemPrompt()`: exposes the current system prompt in an extension context.
 - `session_start`: is available for reporting startup persistence errors through the UI.
 - Later `before_agent_start` handlers can still replace the prompt. This extension does not claim priority over other extensions.
 - `pi.events`: the shared event bus (`Shared event bus for extension communication` at `dist/core/extensions/types.d.ts:1157-1158`; `emit(channel: string, data: unknown): void` and `on(channel: string, handler: (data: unknown) => void): () => void` at `dist/core/event-bus.d.ts:1-4`; documented at `docs/extensions.md:1832-1838`) delivers the live `ForcedStyleController` to other extensions.
 
-## Unreleased prompt-section change
+## Prompt sections in 0.6.3
 
-The source after `0.6.2` owns two section keys: `pi_output_styles_coding` and `pi_output_styles_style`, in that order. The first contains the same extension-owned coding block when `keepCodingInstructions` is true; the second retains `## Output style: <name>` and the unchanged instructions. Returning to `default` removes both; disabling `keep-coding-instructions` removes only the coding section. Unrelated sections are preserved.
+Version `0.6.3` owns two section keys: `pi_output_styles_coding` and `pi_output_styles_style`, in that order. The first contains the same extension-owned coding block when `keepCodingInstructions` is true; the second retains `## Output style: <name>` and the unchanged instructions. Returning to `default` removes both; disabling `keep-coding-instructions` removes only the coding section. Unrelated sections are preserved.
 
 `test/fixtures/prompt-session-probe.mjs` runs the real Pi loader, runner, session, and Anthropic serializer with synthetic messages and an in-memory credential store. It captures the payload in `onPayload` and throws before sending; `fetch` is also disabled. The same probe passed with Pi `0.87.0` and `1.4.0` on Node.js `v24.22.1`. It checks:
 
@@ -94,7 +94,7 @@ Coverage comes from the local suite: parity assertions per style in `test/styles
 
 ## Not covered
 
-- Full extension compatibility with Pi versions other than `0.87.0`: not-run. The unreleased prompt path alone was also checked against `1.4.0`, as described above.
+- Full extension compatibility with Pi versions other than `0.87.0`: not-run. The `0.6.3` prompt path alone was also checked against `1.4.0`, as described above.
 - User and project custom style discovery: covered by local fixture and integration tests for the approved user/project directories, precedence, malformed files, and fallback behavior.
 - Plugin-forced temporary styles: the programmatic `ForcedStyleController` factory is covered by local tests, and cross-plugin force delivery runs over Pi's shared event bus: the extension emits the live controller on `pi-response-styles:style-controller` at load and re-emits it whenever another extension emits `pi-response-styles:style-controller-request`, so any load order works. `test/integration/style-controller-interop.test.ts` exercises delivery, forcing, and release through Pi's real loader and event bus in both load orders. The bus payload is untyped (`data: unknown`), so a receiver must verify the shape it gets, and no third-party plugin itself has been tested: that remains not-run.
 - `waitingTurnReminder`: blocked (FAIL-CLOSED); no public background-only waiting event exists in Pi `0.87.0`.

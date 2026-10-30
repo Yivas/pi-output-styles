@@ -12,7 +12,7 @@ List the checks and manual verification you ran. If no checks apply because the 
 
 ## Compatibility
 
-State the affected Pi, Node.js, package-manager, or documentation baseline. Pi `0.87.0` is the only compatibility baseline currently verified; other Pi versions have not been run. The package is published as release `v0.6.2` on GitHub and as the npm package `pi-response-styles` version `0.6.2`.
+State the affected Pi, Node.js, package-manager, or documentation baseline. Pi `0.87.0` is the full-suite compatibility baseline; the additional `1.4.0` probe covers only the prompt path. The package version is `0.6.3`, distributed as `pi-response-styles` on npm and through GitHub Releases.
 
 ## Risks and follow-up
 
