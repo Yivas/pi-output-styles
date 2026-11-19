@@ -81,10 +81,10 @@ describe("/output-style", () => {
   it("reports status and changes the active style for later turns", async () => {
     const { command, state } = registerCommand();
     const notify = vi.fn();
-    const promptHandler = vi.fn();
+    const promptHandlers = new Map<string, (event: never, ctx: never) => unknown>();
     const promptApi = {
-      on: (_event: string, handler: typeof promptHandler) => {
-        promptHandler.mockImplementation(handler);
+      on: (event: string, handler: (event: never, ctx: never) => unknown) => {
+        promptHandlers.set(event, handler);
         return () => {};
       },
     } as unknown as ExtensionAPI;
@@ -98,7 +98,7 @@ describe("/output-style", () => {
     expect(notify).toHaveBeenLastCalledWith("Output style selected: Concise", "info");
 
     const event = createPromptEvent("Native instructions");
-    const result = await promptHandler(event, {} as never);
+    const result = await promptHandlers.get("before_agent_start")?.(event as never, {} as never);
     expect(result).toBeUndefined();
     expect(event.systemPromptOptions.sections.pi_output_styles_style).toContain("## Output style: Concise");
   });

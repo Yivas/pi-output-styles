@@ -4,6 +4,10 @@ All notable changes to `pi-output-styles` are documented here.
 
 ## Unreleased
 
+### Fixed
+
+- A style selected in the middle of a session now reaches the model as the instructions it reads first. On transports that accept mid-conversation system messages, Pi sends the transcript's first system message as the prompt and appends later section changes as updates, so the previous style stayed at the head and the model kept following it; the new one only arrived as a late note. The two owned sections are now written into the leading message of every request that differs, and removed from the later updates, leaving the head content, the sections of other extensions and the tool declarations untouched.
+
 ## [0.6.3] - 2026-10-30
 
 ### Fixed

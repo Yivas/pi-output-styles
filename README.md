@@ -2,7 +2,7 @@
 
 Switchable response styles for Pi, implemented as a Pi extension. It provides built-in and user- or project-defined instructions for coding-agent work.
 
-**Version:** `0.6.3`, with the full suite verified against Pi `0.87.0`. The prompt path was also checked against Pi `1.4.0` without network requests (see [compatibility](docs/compatibility.md)).
+**Version:** `0.6.3`, with the full suite verified against Pi `0.87.0`. The prompt path was also checked against Pi `1.4.0` and `1.5.2` without network requests (see [compatibility](docs/compatibility.md)).
 
 **Navigation:** [Security](SECURITY.md) · [Contributing](CONTRIBUTING.md) · [License](LICENSE) · [Releases](https://github.com/yivas/pi-output-styles/releases)
 
@@ -18,7 +18,7 @@ The repository currently includes:
 
 - Ten built-in styles: `default`, `Proactive`, `Concise`, `Explanatory`, `Learning`, `Reviewer`, `Diagrams first`, `STE`, `Caveman`, and `ELI5`.
 - The `/output-style` command for listing styles, showing status, and selecting a style.
-- Injection of the active style through Pi's structured prompt sections, with a fallback when another extension has already forced a complete prompt.
+- Injection of the active style through Pi's structured prompt sections, written into the leading prompt of each request that needs it, with a fallback when another extension has already forced a complete prompt.
 - Persistence of the selected style in the extension-owned `<agentDir>/pi-output-styles.selection.json` file.
 - Turn-start reminders and the `keep-coding-instructions` behavior.
 - Custom styles from the user and project directories, with precedence `built-in < user < project`.
@@ -28,7 +28,7 @@ The waiting-turn reminder is fail-closed: Pi 0.87.0 does not expose a verified h
 
 ## Status and compatibility
 
-The extension is executable and covered by the repository's local checks. The full-suite compatibility baseline is Pi `0.87.0`. The prompt fix also has a no-network loader, runner, session, and transport probe on Pi `1.4.0`; that is not a full compatibility claim or a measurement of live cache hits. Installation of `pi-response-styles@0.2.0` from the npm registry has been verified.
+The extension is executable and covered by the repository's local checks. The full-suite compatibility baseline is Pi `0.87.0`. The prompt path also has a no-network loader, runner, session, and transport probe on Pi `1.4.0` and `1.5.2`; that is not a full compatibility claim or a measurement of live cache hits. Installation of `pi-response-styles@0.2.0` from the npm registry has been verified.
 
 ## Installation
 

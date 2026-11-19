@@ -188,12 +188,34 @@ export default function (pi) {
   await session.prompt("Remove the owned coding section");
   assert.equal(session.messages.filter((message) => message.role === "system").at(-1).sections.pi_output_styles_coding, null);
   assert.equal(ai.getCurrentSystemMessage(session.messages).sections.pi_output_styles_coding, undefined);
-  assert.deepEqual(payloads.at(-1).system, before.system);
+  // The leading prompt carries what the model must follow now: the style stays, the coding block is gone.
+  const codingRemovedSystem = JSON.stringify(payloads.at(-1).system);
+  assert.ok(codingRemovedSystem.includes("## Output style:"), "The leading system must keep the active style");
+  assert.ok(!codingRemovedSystem.includes("## Coding instructions"), "The leading system must drop the removed section");
+  assert.ok(codingRemovedSystem.includes("coding assistant"),
+    "The rest of the leading prompt must survive the patch");
+  assert.ok(codingRemovedSystem.includes("<tools>"), "The leading tool block must survive the patch");
   await selectStyle("default");
   await session.prompt("Remove the style section");
   assert.equal(session.messages.filter((message) => message.role === "system").at(-1).sections.pi_output_styles_style, null);
   assert.equal(ai.getCurrentSystemMessage(session.messages).sections.pi_output_styles_style, undefined);
-  assert.deepEqual(payloads.at(-1).system, before.system);
+  const defaultSystem = JSON.stringify(payloads.at(-1).system);
+  assert.ok(!defaultSystem.includes("## Output style:"), "Returning to default must leave no style in the leading system");
+  assert.ok(!defaultSystem.includes("## Coding instructions"), "Returning to default must leave no coding block behind");
+  assert.ok(defaultSystem.includes("coding assistant"),
+    "The rest of the leading prompt must survive the patch");
+  assert.ok(defaultSystem.includes("<tools>"), "The leading tool block must survive the patch");
+  await selectStyle("concise");
+  await session.prompt("Reapply the Concise style");
+  await selectStyle("explanatory");
+  await session.prompt("Change the style in the middle of the session");
+  const changedPayload = JSON.stringify(payloads.at(-1));
+  assert.ok(JSON.stringify(payloads.at(-1).system).includes("## Output style: Explanatory"),
+    "A mid-session style change must reach the leading system prompt");
+  assert.ok(!JSON.stringify(payloads.at(-1).system).includes("## Output style: Concise"),
+    "The previous style must leave the leading system prompt");
+  assert.equal(changedPayload.split("## Output style: Explanatory").length - 1, 1,
+    "The active style must reach the provider once");
   await selectStyle("concise");
   const legacyManager = pi.SessionManager.inMemory(directory);
   const originalHead = session.messages.find((message) => message.role === "system");
@@ -215,7 +237,8 @@ export default function (pi) {
   assert.deepEqual(payloads.at(-1).tools.slice(0, resumed.tools.length), resumed.tools);
   process.stdout.write(`${JSON.stringify({ version: require("./package.json").version,
     toolsBefore: before.tools.map((tool) => tool.name), toolsAfter: after.tools.map((tool) => tool.name),
-    prefixPreserved: true, styleOccurrences: 1, runnerContracts: true, legacyResumed: true, networkRequests: 0 })}\n`);
+    prefixPreserved: true, styleOccurrences: 1, headFollowsStyle: true, runnerContracts: true,
+    legacyResumed: true, networkRequests: 0 })}\n`);
 } finally {
   session?.dispose();
   await rm(directory, { recursive: true, force: true });

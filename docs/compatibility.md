@@ -6,7 +6,7 @@ The compatibility statements in this document are limited to the Pi installation
 
 - Pi package: local dependency `@earendil-works/pi-coding-agent` `0.87.0` (the API probe pins `PI_PACKAGE_DIR` to this dependency so an unrelated global Pi installation cannot change the observed version)
 - Node.js: the original release baseline used `v24.9.0`; the `0.6.3` checks below ran on `v24.22.1`
-- Package version: `pi-response-styles` `0.6.3`; full-suite compatibility baseline Pi `0.87.0`, with the prompt path additionally checked on `1.4.0`; `waitingTurnReminder` blocked (FAIL-CLOSED); cross-plugin force delivery through `pi.events` covered by local integration tests
+- Package version: `pi-response-styles` `0.6.3`; full-suite compatibility baseline Pi `0.87.0`, with the prompt path additionally checked on `1.4.0` and `1.5.2`; `waitingTurnReminder` blocked (FAIL-CLOSED); cross-plugin force delivery through `pi.events` covered by local integration tests
 
 ## Observed extension API
 
@@ -15,6 +15,7 @@ The local Pi types, documentation, and a no-network extension runner probe verif
 - `before_agent_start`: exposes mutable `systemPromptOptions.sections` and a `systemPrompt` getter that renders the current options. This version writes its own sections without returning `systemPrompt` unless a prior handler has already set `forceSystemPrompt`.
 - `registerCommand`: registers `/output-style` and works with non-UI contexts.
 - `ctx.getSystemPrompt()`: exposes the current system prompt in an extension context.
+- `context_with_system`: exposes the full transcript, including the leading system message and any later section patches, and sends the returned list as it is; a system message must stay at index 0. The extension uses it to write its two sections into the leading message for the request that needs it.
 - `session_start`: is available for reporting startup persistence errors through the UI.
 - Later `before_agent_start` handlers can still replace the prompt. This extension does not claim priority over other extensions.
 - `pi.events`: the shared event bus (`Shared event bus for extension communication` at `dist/core/extensions/types.d.ts:1157-1158`; `emit(channel: string, data: unknown): void` and `on(channel: string, handler: (data: unknown) => void): () => void` at `dist/core/event-bus.d.ts:1-4`; documented at `docs/extensions.md:1832-1838`) delivers the live `ForcedStyleController` to other extensions.
@@ -23,14 +24,19 @@ The local Pi types, documentation, and a no-network extension runner probe verif
 
 Version `0.6.3` owns two section keys: `pi_output_styles_coding` and `pi_output_styles_style`, in that order. The first contains the same extension-owned coding block when `keepCodingInstructions` is true; the second retains `## Output style: <name>` and the unchanged instructions. Returning to `default` removes both; disabling `keep-coding-instructions` removes only the coding section. Unrelated sections are preserved.
 
-`test/fixtures/prompt-session-probe.mjs` runs the real Pi loader, runner, session, and Anthropic serializer with synthetic messages and an in-memory credential store. It captures the payload in `onPayload` and throws before sending; `fetch` is also disabled. The same probe passed with Pi `0.87.0` and `1.4.0` on Node.js `v24.22.1`. It checks:
+### The leading prompt
+
+Pi sends the transcript's first system message as the provider's leading prompt. How a section change reaches the model depends on the transport: a model whose compatibility declares mid-conversation system messages receives the change as an update placed in the conversation and keeps its cached prefix, while any other model gets the replayed prompt as its system prompt once per change. In the first case a style selected mid-session used to leave the previous style at the head, where the model reads its instructions, and arrive as a late note; the model kept following the old style, most visibly in long sessions. The extension now writes both owned sections into the leading message of the request when they differ, in the same rendered form Pi stores (`<name>` … `</name>`), and drops those two keys from the later updates, so the active style is stated once, at the head. Head `content`, other extensions' sections, `toolsAdded`, `toolsRemoved` and `timestamp` are preserved, and a request whose head already matches is left untouched. The cost is one cache rebuild per style change: the stored head keeps the previous style, so every later request rebuilds the same bytes until compaction or a new session writes a fresh head. The comparison relies on Pi's section rendering, which is not part of the typed public API; if a future Pi changed the wrapper, the request would fall back to rebuilding an equivalent head on every request, with the style still stated once. Transcripts without a leading system message keep the previous behaviour and are not covered by the request-time patch.
+
+`test/fixtures/prompt-session-probe.mjs` runs the real Pi loader, runner, session, and Anthropic serializer with synthetic messages and an in-memory credential store. It captures the payload in `onPayload` and throws before sending; `fetch` is also disabled. The same probe passed with Pi `0.87.0` and `1.4.0` on Node.js `v24.22.1`, and with Pi `1.5.2` on Node.js `v26.13.0`. It checks:
 
 - After activating a tool, the leading system text and original tool declarations remain unchanged, including their cache markers. Pi `0.87.0` appends the new declaration to the deferred tail; Pi `1.4.0` carries it in the conversation update. The previous conversation stays a prefix, apart from the provider's moving cache markers.
 - The runner copies options per run, renders updated sections through its getter, and emits `null` patches for removed sections. Style and coding instructions arrive once; the `Explanatory` and `Learning` bodies remain unchanged.
 - A prior forced prompt, including an empty or text-identical replacement, uses the fallback. A later handler that returns `event.systemPrompt` includes the current style once. Returning to normal composition does not retain forced state.
 - A synthetic pre-migration session resumes with one copy of the style, and its leading prefix stays stable when a tool is activated afterward. Pi may append a one-time section update during migration.
+- A style selected mid-session reaches the provider as the leading system prompt, the previous style is absent from the whole payload, and the active style appears once. Removal paths keep the rest of the head: its preamble text and its tool block.
 
-These are no-network structural checks, not evidence of provider cache hits, token savings, or full compatibility of every extension feature with Pi `1.4.0`. The full-suite baseline remains `0.87.0`. No local build was installed in a user's Pi, and no live provider request was made for this change.
+These are no-network structural checks, not evidence of provider cache hits, token savings, or full compatibility of every extension feature with Pi `1.4.0` or `1.5.2`. The full-suite baseline remains `0.87.0`. No local build was installed in a user's Pi, and no live provider request was made for this change.
 
 If `forceSystemPrompt !== undefined` when the hook runs, sections would be invisible, so the extension appends its blocks to the forced text as before. This preserves the style, not the cached prefix. A later extension that replaces the prompt without using the current getter can discard the style altogether. Cache behavior also depends on the provider and model supporting transcript updates; this change cannot repair other extensions or transports that collapse the transcript.
 
@@ -94,7 +100,7 @@ Coverage comes from the local suite: parity assertions per style in `test/styles
 
 ## Not covered
 
-- Full extension compatibility with Pi versions other than `0.87.0`: not-run. The `0.6.3` prompt path alone was also checked against `1.4.0`, as described above.
+- Full extension compatibility with Pi versions other than `0.87.0`: not-run. The prompt path alone was also checked against `1.4.0` and `1.5.2`, as described above.
 - User and project custom style discovery: covered by local fixture and integration tests for the approved user/project directories, precedence, malformed files, and fallback behavior.
 - Plugin-forced temporary styles: the programmatic `ForcedStyleController` factory is covered by local tests, and cross-plugin force delivery runs over Pi's shared event bus: the extension emits the live controller on `pi-response-styles:style-controller` at load and re-emits it whenever another extension emits `pi-response-styles:style-controller-request`, so any load order works. `test/integration/style-controller-interop.test.ts` exercises delivery, forcing, and release through Pi's real loader and event bus in both load orders. The bus payload is untyped (`data: unknown`), so a receiver must verify the shape it gets, and no third-party plugin itself has been tested: that remains not-run.
 - `waitingTurnReminder`: blocked (FAIL-CLOSED); no public background-only waiting event exists in Pi `0.87.0`.
