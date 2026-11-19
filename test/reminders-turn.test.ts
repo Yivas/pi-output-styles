@@ -116,7 +116,7 @@ describe("declared built-in reminders", () => {
   }
 
   it("emits the declared built-in turn reminders once per event and keeps them out of the prompt", async () => {
-    for (const styleId of ["proactive", "concise", "reviewer", "diagrams-first", "ste", "caveman", "eli5"] as const) {
+    for (const styleId of ["learning", "ste", "caveman", "eli5"] as const) {
       const style = registry.resolve(styleId);
       if (!style?.turnReminder) {
         throw new Error(`The ${styleId} built-in must declare a turn reminder`);
@@ -153,12 +153,13 @@ describe("declared built-in reminders", () => {
     const { capabilities, notifications } = await emitTurn(style);
 
     expect(capabilities).toEqual({ turn: true, waiting: false });
-    expect(notifications).toEqual([style.turnReminder]);
+    expect(style.turnReminder).toBeUndefined();
+    expect(notifications).toEqual([]);
     expect(notifications.join("\n")).not.toContain(style.waitingTurnReminder);
   });
 
   it("stays silent for the built-ins that declare no reminders", async () => {
-    for (const styleId of ["default", "explanatory", "learning"] as const) {
+    for (const styleId of ["default", "concise", "explanatory", "reviewer", "diagrams-first"] as const) {
       const style = registry.resolve(styleId);
       if (!style) {
         throw new Error(`The ${styleId} built-in is missing`);

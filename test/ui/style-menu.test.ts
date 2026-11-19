@@ -100,12 +100,11 @@ describe("StyleMenu detail panel", () => {
   it("shows the selected style description and real status metadata", () => {
     const output = createMenu(createBuiltinRegistry(), { activeStyleId: "concise" }).render(120).join("\n");
 
-    expect(output).toContain("Answer with the result first, without preamble or narration.");
-    expect(output).toContain("turn reminder: yes");
-    expect(output).toContain("keep-coding: on");
-    expect(output).not.toContain("turn reminder: no");
-    expect(output).not.toContain("Active style");
-    expect(output).not.toContain("Act immediately");
+    expect(output).toContain("Report the outcome, what to act on");
+    expect(output).toContain("turn reminder: no · keep-coding: on");
+    expect(output).not.toContain("turn reminder: yes");
+    expect(output).not.toContain("### Active style");
+    expect(output).not.toContain("Decide and act inside the turn");
   });
 
   it("reports the default style without reminders, keep-coding or a source path", () => {
@@ -293,10 +292,10 @@ describe("StyleMenu responsive layout", () => {
     const lines = createMenu(createBuiltinRegistry(), { activeStyleId: "concise" }).render(79);
     const output = lines.join("\n");
 
-    expect(output).toContain("Answer with the result first, without preamble or narration.");
-    expect(output).toContain("turn reminder: yes");
-    expect(output).not.toContain("Act immediately");
-    expect(output).not.toContain("Stop and ask the human");
+    expect(output).toContain("Report the outcome, what to act on");
+    expect(output).toContain("turn reminder: no");
+    expect(output).not.toContain("Decide and act inside the turn");
+    expect(output).not.toContain("Hand the design calls");
     for (const line of lines) {
       expect(renderedWidth(line)).toBeLessThanOrEqual(79);
     }
@@ -305,8 +304,8 @@ describe("StyleMenu responsive layout", () => {
   it("restores the two detail zones from 80 columns", () => {
     const output = createMenu(createBuiltinRegistry(), { activeStyleId: "concise" }).render(80).join("\n");
 
-    expect(output).toContain("turn reminder: yes");
-    expect(output).toContain("Answer with the result");
+    expect(output).toContain("turn reminder: no");
+    expect(output).toContain("Report the outcome");
   });
 });
 
@@ -337,7 +336,7 @@ describe("StyleMenu keyboard", () => {
     menu.handleInput("\x1b[B");
     expect(requestRender).toHaveBeenCalledTimes(2);
     const moved = menu.render(120).join("\n");
-    expect(moved).toContain("Act immediately, keep interruptions to a minimum");
+    expect(moved).toContain("Decide and act inside the turn");
     expect(moved).toContain("[accent]>   Proactive[/]");
     expect(moved).not.toContain("Use Pi's normal response behavior");
 
@@ -346,7 +345,7 @@ describe("StyleMenu keyboard", () => {
     }
     const atBottom = menu.render(120).join("\n");
     expect(atBottom).toContain("[accent]>   ELI5[/]");
-    expect(atBottom).toContain("Plain short words for a tired reader");
+    expect(atBottom).toContain("Plain words for a tired reader");
 
     for (let step = 0; step < 10; step += 1) {
       menu.handleInput("\x1b[A");
@@ -407,22 +406,22 @@ describe("StyleMenu instructions body", () => {
   it("keeps other styles' bodies out of the detail while navigating", () => {
     const menu = createMenu(createBuiltinRegistry(), { activeStyleId: "concise" });
     const first = menu.render(120).join("\n");
-    expect(first).toContain("Brevity never outranks correctness");
-    expect(first).not.toContain("Add one insight block before writing code");
+    expect(first).toContain("What a reply contains");
+    expect(first).not.toContain("Emit one block");
 
     menu.handleInput("\x1b[B");
 
     const moved = menu.render(120).join("\n");
-    expect(moved).toContain("Add one insight block before writing code");
-    expect(moved).not.toContain("Brevity never outranks correctness");
+    expect(moved).toContain("Emit one block");
+    expect(moved).not.toContain("What a reply contains");
   });
 
   it("drops the body below 80 columns and keeps the description in the row", () => {
     const lines = createMenu(createBuiltinRegistry(), { activeStyleId: "concise" }).render(79);
     const output = lines.join("\n");
 
-    expect(output).toContain("Answer with the result first, without preamble or narration.");
-    expect(output).not.toContain("Brevity never outranks correctness");
+    expect(output).toContain("Report the outcome, what to act on");
+    expect(output).not.toContain("What a reply contains");
     for (const line of lines) {
       expect(renderedWidth(line)).toBeLessThanOrEqual(79);
     }

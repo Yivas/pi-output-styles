@@ -4,6 +4,10 @@ All notable changes to `pi-output-styles` are documented here.
 
 ## Unreleased
 
+### Changed
+
+- The nine built-in styles that carry prompt text were rewritten around one axis each, with a positive contract in front of the rules instead of slogans and conversational prohibitions: what a reply contains (`Concise`), the answer before the grammar (`Caveman`), the cognitive load (`ELI5`), the syntax (`STE`), the findings (`Reviewer`), the hand-over (`Learning`), the rationale (`Explanatory`), the structure (`Diagrams first`) and the decision behaviour (`Proactive`). The brevity and anti-narration slogans are gone, including the `Concise` turn reminder; `Explanatory` ties an insight's content to a decision worth naming, emits one block per turn and never more than two; `Proactive` no longer pushes for code when in doubt, widens its confirmation rule to anything irreversible and surfaces its assumptions instead. Turn reminders remain only where the style drifts (`Learning`, `STE`, `Caveman`, `ELI5`) and read as a state marker. The drawn insight box, `TODO(human)` and the three-field request block are unchanged.
+
 ### Fixed
 
 - A style selected in the middle of a session now reaches the model as the instructions it reads first. On transports that accept mid-conversation system messages, Pi sends the transcript's first system message as the prompt and appends later section changes as updates, so the previous style stayed at the head and the model kept following it; the new one only arrived as a late note. The two owned sections are now written into the leading message of every request that differs, and removed from the later updates, leaving the head content, the sections of other extensions and the tool declarations untouched.
