@@ -5,8 +5,8 @@ The compatibility statements in this document are limited to the Pi installation
 ## Checked baseline
 
 - Pi package: local dependency `@earendil-works/pi-coding-agent` `0.87.0` (the API probe pins `PI_PACKAGE_DIR` to this dependency so an unrelated global Pi installation cannot change the observed version)
-- Node.js: the original release baseline used `v24.9.0`; the `0.6.3` checks below ran on `v24.22.1`
-- Package version: `pi-response-styles` `0.6.3`; full-suite compatibility baseline Pi `0.87.0`, with the prompt path additionally checked on `1.4.0` and `1.5.2`; `waitingTurnReminder` blocked (FAIL-CLOSED); cross-plugin force delivery through `pi.events` covered by local integration tests
+- Node.js: the original release baseline used `v24.9.0`; the `0.6.3` checks below ran on `v24.22.1` and the `0.7.0` checks on `v26.13.0`
+- Package version: `pi-response-styles` `0.7.0`; full-suite compatibility baseline Pi `0.87.0`, with the prompt path additionally checked on `1.4.0` and `1.5.2`; `waitingTurnReminder` blocked (FAIL-CLOSED); cross-plugin force delivery through `pi.events` covered by local integration tests
 
 ## Observed extension API
 
@@ -20,9 +20,9 @@ The local Pi types, documentation, and a no-network extension runner probe verif
 - Later `before_agent_start` handlers can still replace the prompt. This extension does not claim priority over other extensions.
 - `pi.events`: the shared event bus (`Shared event bus for extension communication` at `dist/core/extensions/types.d.ts:1157-1158`; `emit(channel: string, data: unknown): void` and `on(channel: string, handler: (data: unknown) => void): () => void` at `dist/core/event-bus.d.ts:1-4`; documented at `docs/extensions.md:1832-1838`) delivers the live `ForcedStyleController` to other extensions.
 
-## Prompt sections in 0.6.3
+## Prompt sections in 0.6.3 and 0.7.0
 
-Version `0.6.3` owns two section keys: `pi_output_styles_coding` and `pi_output_styles_style`, in that order. The first contains the same extension-owned coding block when `keepCodingInstructions` is true; the second retains `## Output style: <name>` and the unchanged instructions. Returning to `default` removes both; disabling `keep-coding-instructions` removes only the coding section. Unrelated sections are preserved.
+Version `0.6.3` introduced the two owned section keys and version `0.7.0` keeps them; the extension owns two section keys: `pi_output_styles_coding` and `pi_output_styles_style`, in that order. The first contains the same extension-owned coding block when `keepCodingInstructions` is true; the second retains `## Output style: <name>` and the unchanged instructions. Returning to `default` removes both; disabling `keep-coding-instructions` removes only the coding section. Unrelated sections are preserved.
 
 ### The leading prompt
 

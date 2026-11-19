@@ -2,12 +2,13 @@
 
 ## Supported versions
 
-The supported version is `0.6.3`. Security reports are accepted for that version and for repository commits after it. The full-suite Pi compatibility baseline is `0.87.0`; the additional `1.4.0` probe covers only the prompt path.
+The supported version is `0.7.0`. Security reports are accepted for that version and for repository commits after it. The full-suite Pi compatibility baseline is `0.87.0`; the additional `1.4.0` and `1.5.2` probes cover only the prompt path.
 
 | Version or line | Support status |
 | --- | --- |
-| 0.6.3 | Supported; full suite on Pi `0.87.0`, prompt path also on `1.4.0` |
-| Repository commits after 0.6.3 | Security reports accepted; not a numbered release |
+| 0.7.0 | Supported; full suite on Pi `0.87.0`, prompt path also on `1.4.0` and `1.5.2` |
+| 0.6.3 | Previous release; security reports accepted, no further fixes planned on its line |
+| Repository commits after 0.7.0 | Security reports accepted; not a numbered release |
 
 ## Scope and product boundaries
 
@@ -33,7 +34,7 @@ Do not disclose sensitive vulnerability details in a public issue. Use the repos
 
 A useful report should include:
 
-- The version or commit tested: the package version (currently `0.6.3`) or the repository commit.
+- The version or commit tested: the package version (currently `0.7.0`) or the repository commit.
 - The environment, including the Pi version, operating system, and relevant runtime details.
 - A minimal, sanitized reproduction.
 - The security impact and affected behavior.
